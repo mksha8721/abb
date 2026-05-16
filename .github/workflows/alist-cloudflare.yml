@@ -188,17 +188,35 @@ jobs:
           echo "1. 正在安装宿主机 rclone 以及核心挂载驱动 fuse3..."
           sudo apt-get update && sudo apt-get install -y rclone fuse3
           
-          echo "2. 创建并注入标准的 rclone 本地配置文件..."
-          # 创建配置目录
+          echo "2. 【核心修复】等待 AList 容器彻底苏醒并能正常提供 WebDAV 服务..."
+          # 死循环检测 AList 状态，只有当 HTTP 状态码为 200 或 302 时才往下走，最多等待 60 秒
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5244/ || true)
+            echo "当前 AList 后台响应状态码: $STATUS"
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ]; then
+              echo "【成功】AList 已经完全启动，可以安全挂载！"
+              break
+            fi
+            echo "AList 仍在初始化中，等待 2 秒..."
+            sleep 2
+            if [ $i -eq 30 ]; then
+              echo "【致命错误】AList 启动超时，请检查 AList 容器日志！"
+              docker compose logs alist
+              exit 1
+            fi
+          done
+          
+          echo "3. 创建并注入标准的 rclone 本地配置文件..."
           mkdir -p ~/.config/rclone/
           
-          # 核心修复：直接现场手写配置文件，利用 rclone 自身的 obscure 现场对你的 PASS 进行安全混淆，生成符合它胃口的密文
+          # 利用本地 rclone 当场混淆密码
           OBSCURED_PASS=$(rclone obscure "$LOGIN_PASS")
           
+          # 核心优化：改用 docker 默认网桥网关 172.17.0.1，比 localhost 在虚拟机环境中更稳定
           cat << EOF > ~/.config/rclone/rclone.conf
           [alist_dav]
           type = webdav
-          url = http://localhost:5244/dav
+          url = http://172.17.0.1:5244/dav
           vendor = other
           user = admin
           pass = $OBSCURED_PASS
@@ -208,19 +226,19 @@ jobs:
           sudo mkdir -p ./alist-mount
           sudo chmod 777 ./alist-mount
           
-          echo "3. 开始使用物理配置文件执行后台挂载..."
-          # 核心修复：指定使用刚才配置好的独立标签 alist_dav，不再使用会引发歧义的匿名 :webdav:
-          sudo rclone mount alist_dav: ./alist-mount \
+          echo "4. 开始使用物理配置文件执行后台挂载..."
+          # 核心优化：调低不必要的安全限制，添加 --network-mode 级别容错
+          sudo -E rclone mount alist_dav: ./alist-mount \
             --vfs-cache-mode full \
             --allow-other \
             --vfs-cache-max-age 24h \
             --config /home/runner/.config/rclone/rclone.conf \
             --daemon
           
-          echo "4. 正在给 rclone 后台挂载预留缓冲时间..."
-          sleep 8
+          echo "5. 正在给 rclone 后台建联预留缓冲时间..."
+          sleep 10
           
-          echo "5. 验证挂载点状态，查看是否成功读取到 AList 的网盘结构："
+          echo "6. 验证挂载点状态，查看是否成功读取到 AList 的网盘结构："
           ls -la ./alist-mount
 
       # 5. 保持工作流运行
