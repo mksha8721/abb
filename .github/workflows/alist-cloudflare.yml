@@ -1,0 +1,73 @@
+name: Run AList with Cloudflare Tunnel
+
+on:
+  workflow_dispatch: # 支持手动点击触发
+
+jobs:
+  run-service:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. 创建 docker-compose.yml 配置文件
+      - name: Create Docker Compose File
+        run: |
+          cat << 'EOF' > docker-compose.yml
+          version: '3.3'
+          services:
+            alist:
+              image: xhofe/alist:latest
+              container_name: alist
+              ports:
+                - "5244:5244"
+              volumes:
+                - ./alist-data:/opt/alist/data
+              environment:
+                - PUID=0
+                - PGID=0
+                - UMASK=022
+              restart: always
+
+            tunnel:
+              image: cloudflare/cloudflared:latest
+              container_name: cloudflared-tunnel
+              restart: always
+              # 这里的网络需要指向 alist 容器，但因为 cloudflared 使用 host 或 直接连 localhost，
+              # 我们可以通过 network_mode: "host" 或者默认网络访问。
+              # 这里使用 command 直接传入我们在 GitHub Secrets 中配置的 Token
+              command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+              network_mode: "host"
+              depends_on:
+                - alist
+          EOF
+
+      # 2. 启动服务
+      - name: Start AList and Cloudflare Tunnel
+        env:
+          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        run: |
+          # 后台启动容器
+          docker compose up -d
+          
+          # 等待服务完全启动
+          sleep 8
+          
+          echo "========================================="
+          echo "AList 初始登录管理员密码："
+          docker exec alist ./alist admin
+          echo "========================================="
+          
+          # 打印容器运行状态，方便排查问题
+          docker compose ps
+
+      # 3. 保持工作流运行（防止虚拟机立即销毁）
+      - name: Keep Workflow Alive
+        run: |
+          echo "AList 服务和 Cloudflare 隧道已就绪！"
+          echo "请访问你在 Cloudflare 绑定的域名进行访问（例如: https://alist-test.yourdomain.com）"
+          echo "工作流将保持运行，最多运行 6 小时。若想停止，请在 GitHub 页面手动取消（Cancel run）。"
+          
+          # 循环保持，防止 Action 结束
+          while true; do sleep 60; done
