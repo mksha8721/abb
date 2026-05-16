@@ -14,57 +14,6 @@ services:
       - UMASK=022
     restart: always
 
-  immich-server:
-    container_name: immich_server
-    image: ghcr.io/immich-app/immich-server:release
-    #network_mode: "host" # 👈 让它和 tunnel 处于同一个网络平面
-   
-    volumes:
-      - ./immich-upload:/data
-      - ./alist-mount:/external_alist:ro
-      - /etc/localtime:/etc/localtime:ro
-      
-    env_file:
-      - .env
-    ports:
-      - "2283:2283"
-    depends_on:
-      immich-postgres:
-        condition: service_healthy
-      immich-redis:
-        condition: service_started
-    restart: always
-
-  immich-machine-learning:
-    container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:release
-    volumes:
-      - ./immich-cache:/cache
-      - ./alist-mount:/usr/src/app/external_alist:ro  # 同步映射 rclone 挂载点
-    env_file:
-      - .env
-    restart: always
-
-  immich-postgres:
-    container_name: immich_postgres
-    image: tensorchord/pgvecto-rs:pg14-v0.2.0
-    environment:
-      POSTGRES_PASSWORD: DB_PASSWORD_TEMPORARY
-      POSTGRES_USER: postgres
-      POSTGRES_DB: immich
-    volumes:
-      - ./immich-postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d immich -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
-
-  immich-redis:
-    container_name: immich_redis
-    image: redis:6.2-alpine
-    restart: always
 
   tunnel:
     image: cloudflare/cloudflared:latest
@@ -74,4 +23,3 @@ services:
     network_mode: "host"
     depends_on:
       - alist
-      - immich-server
