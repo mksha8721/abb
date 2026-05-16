@@ -57,14 +57,15 @@ jobs:
             immich-server:
               container_name: immich_server
               image: ghcr.io/immich-app/immich-server:release
+              network_mode: "host" # 👈 让它和 tunnel 处于同一个网络平面
+             
               volumes:
                 - ./immich-upload:/usr/src/app/upload
                 - ./alist-mount:/usr/src/app/external_alist:ro  # 映射 rclone 挂载点
                 - /etc/localtime:/etc/localtime:ro
               env_file:
                 - .env
-              ports:
-                - "2283:2283"
+   
               depends_on:
                 immich-postgres:
                   condition: service_healthy
