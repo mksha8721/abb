@@ -1,0 +1,46 @@
+name: Run Tunnel 1panel
+
+on:
+  workflow_dispatch: # 支持手动点击触发
+
+jobs:
+  run-service:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ================= 【缓存优化 1：APT 包管理器缓存】 =================
+      - name: Cache APT Packages
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-rclone-fuse3
+
+
+      - name: Enable SSHD and set root password
+        run: |
+          echo "root:Monchan" | sudo chpasswd
+          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+
+      - name: Install 1Panel
+        run: |
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+
+      - name: Configure 1Panel admin
+        run: |
+          sudo 1pctl user-info
+          sudo 1pctl user create --username mohic --password monchan
+          
+          
+      # 6. 保持工作流运行
+      - name: Keep Workflow Alive
+        run: |
+          echo "=================================================="
+          echo "【极速启动成功】所有服务、网络及物理挂载均已就绪！"
+          echo "=================================================="
+          while true; do sleep 60; done
