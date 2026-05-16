@@ -134,9 +134,11 @@ jobs:
             
             docker cp ./backup.json alist:/opt/alist/data/backup.json
             
-            docker exec alist ./alist admin import /opt/alist/data/backup.json "$BACKUP_PASS"
+            docker exec alist ./alist restore -f /opt/alist/data/backup.json -p "$BACKUP_PASS"
             
-            sleep 5
+            
+            
+            #sleep 5
             
             echo "配置恢复完成！"
             
