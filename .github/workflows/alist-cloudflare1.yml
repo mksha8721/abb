@@ -1,4 +1,4 @@
-name: Run AList and Immich with Cloudflare Tunnel 1panel
+name: Run AList and Tunnel 1panel
 
 on:
   workflow_dispatch: # 支持手动点击触发
