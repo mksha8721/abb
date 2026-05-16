@@ -20,9 +20,10 @@ services:
     #network_mode: "host" # 👈 让它和 tunnel 处于同一个网络平面
    
     volumes:
-      - ./immich-upload:/usr/src/app/upload
-      - ./alist-mount:/usr/src/app/external_alist:ro  # 映射 rclone 挂载点
+      - ./immich-upload:/data
+      - ./alist-mount:/external_alist:ro
       - /etc/localtime:/etc/localtime:ro
+      
     env_file:
       - .env
     ports:
