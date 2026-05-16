@@ -1,4 +1,4 @@
-name: Run AList with Cloudflare Tunnel
+name: Run AList and Immich with Cloudflare Tunnel
 
 on:
   workflow_dispatch: # 支持手动点击触发
@@ -11,12 +11,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. 创建 docker-compose.yml 配置文件
+      # 1. 创建整合了 AList 和 Immich 的 docker-compose.yml 配置文件
+      # 提示：Immich 包含多个微服务（Server、Machine Learning、PostgreSQL、Redis），对内存有一定要求
+      # GitHub Actions 虚拟机提供 7GB 内存，完全足够让它们临时跑起来
       - name: Create Docker Compose File
         run: |
           cat << 'EOF' > docker-compose.yml
-          version: '3.3'
+          version: '3.8'
           services:
+            # --- AList 服务 ---
             alist:
               image: xhofe/alist:latest
               container_name: alist
@@ -30,45 +33,103 @@ jobs:
                 - UMASK=022
               restart: always
 
+            # --- Immich 服务核心组 ---
+            immich-server:
+              container_name: immich_server
+              image: ghcr.io/immich-app/immich-server:release
+              volumes:
+                - ./immich-upload:/usr/src/app/upload
+                - /etc/localtime:/etc/localtime:ro
+              env_file:
+                - .env
+              ports:
+                - "2283:2283"
+              depends_on:
+                - immich-postgres
+                - immich-redis
+              restart: always
+
+            immich-machine-learning:
+              container_name: immich_machine_learning
+              image: ghcr.io/immich-app/immich-machine-learning:release
+              volumes:
+                - ./immich-cache:/cache
+              env_file:
+                - .env
+              restart: always
+
+            immich-postgres:
+              container_name: immich_postgres
+              image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/postgres:14-alpine
+              environment:
+                POSTGRES_PASSWORD: DB_PASSWORD_TEMPORARY
+                POSTGRES_USER: postgres
+                POSTGRES_DB: immich
+              volumes:
+                - ./immich-postgres:/var/lib/postgresql/data
+              restart: always
+
+            immich-redis:
+              container_name: immich_redis
+              image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/redis:6.2-alpine
+              restart: always
+
+            # --- Cloudflare 穿透隧道 ---
             tunnel:
               image: cloudflare/cloudflared:latest
               container_name: cloudflared-tunnel
               restart: always
-              # 这里的网络需要指向 alist 容器，但因为 cloudflared 使用 host 或 直接连 localhost，
-              # 我们可以通过 network_mode: "host" 或者默认网络访问。
-              # 这里使用 command 直接传入我们在 GitHub Secrets 中配置的 Token
+              # 使用 host 网络模式，方便一个隧道同时穿透 localhost:5244 (AList) 和 localhost:2283 (Immich)
               command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
               network_mode: "host"
               depends_on:
                 - alist
+                - immich-server
           EOF
 
-      # 2. 启动服务
-      - name: Start AList and Cloudflare Tunnel
+      # 2. 创建 Immich 专属的 .env 环境变量文件
+      - name: Create Immich Env File
+        run: |
+          cat << 'EOF' > .env
+          # Immich 基础配置
+          DB_PASSWORD=DB_PASSWORD_TEMPORARY
+          DB_USERNAME=postgres
+          DB_DATABASE_NAME=immich
+          DB_HOSTNAME=immich-postgres
+          
+          # 告诉 Immich 机器学习组件的位置
+          IMMICH_MACHINE_LEARNING_URL=http://immich-machine-learning:3003
+          EOF
+
+      # 3. 启动所有服务
+      - name: Start Services and Cloudflare Tunnel
         env:
           CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
           PASS: ${{ secrets.PASS }}
         run: |
-          # 后台启动容器
+          # 后台启动所有容器（由于镜像较多，首次拉取可能需要 1~2 分钟）
           docker compose up -d
           
-          # 等待服务完全启动
-          sleep 8
+          # 给容器多一点启动和初始化数据库的时间
+          echo "正在等待所有服务启动..."
+          sleep 15
           
           echo "========================================="
-          echo "AList 初始登录管理员密码："
+          echo "AList 初始登录管理员密码设置成功："
           docker exec alist ./alist admin set ${PASS}
           echo "========================================="
           
-          # 打印容器运行状态，方便排查问题
+          # 打印所有容器运行状态，确保没有报错退出的容器
           docker compose ps
 
-      # 3. 保持工作流运行（防止虚拟机立即销毁）
+      # 4. 保持工作流运行
       - name: Keep Workflow Alive
         run: |
-          echo "AList 服务和 Cloudflare 隧道已就绪！"
-          echo "请访问你在 Cloudflare 绑定的域名进行访问（例如: https://alist-test.yourdomain.com）"
-          echo "工作流将保持运行，最多运行 6 小时。若想停止，请在 GitHub 页面手动取消（Cancel run）。"
+          echo "=================================================="
+          echo "AList 和 Immich 服务已全部就绪！"
+          echo "1. AList 访问地址: https://alist-test.yourdomain.com"
+          echo "2. Immich 访问地址: https://immich.yourdomain.com"
+          echo "=================================================="
+          echo "工作流保持运行中，最大运行 6 小时..."
           
-          # 循环保持，防止 Action 结束
           while true; do sleep 60; done
