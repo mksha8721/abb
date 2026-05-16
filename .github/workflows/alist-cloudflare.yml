@@ -120,20 +120,23 @@ jobs:
         run: |
           echo "正在从远程 URL 下载加密的 JSON 备份文件..."
           # 下载并存放到 AList 挂载目录下，方便容器读取
-          curl -L "$CONFIG_URL" -o ./alist-data/backup.json
+          curl -L "$CONFIG_URL" -o ./backup.json
           
-          if [ -s ./alist-data/backup.json ]; then
+          if [ -s ./backup.json ]; then
             echo "备份文件下载成功，正在执行解密导入..."
             
             # 使用 AList 自带的 admin 导入指令 
             # 语法：alist admin import <文件路径> <解密密码>
             # -v 参数用于指定覆盖冲突模式（1 代表覆盖现有存储）
+            # 2. 修正：利用 docker cp 命令强行将文件推送到容器的内部路径
+            docker cp ./backup.json alist:/opt/alist/data/backup.json
+            
             docker exec alist ./alist admin import /opt/alist/data/backup.json "$BACKUP_PASS" -v 1
             
             echo "配置恢复完成！"
             
             # 临时清理掉容器外的物理 json 文件防止泄露
-            rm -f ./alist-data/backup.json
+            rm -f ./backup.json
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
           fi
