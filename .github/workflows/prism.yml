@@ -248,7 +248,7 @@ jobs:
             
             sleep 3
             
-            docker compose restart 1Panel-photoprism-B415
+            docker restart 1Panel-photoprism-B415
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
