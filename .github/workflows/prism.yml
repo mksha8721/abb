@@ -215,6 +215,9 @@ jobs:
           LOGIN_PASS: ${{ secrets.PASS }}
           
         run: |
+        
+          1pctl user-info
+          
           echo "$USER" | sudo 1pctl update username
           
           sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
