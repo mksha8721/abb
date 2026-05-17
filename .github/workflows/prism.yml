@@ -69,6 +69,11 @@ jobs:
           fi
           rm -f ./lucky.zip
 
+      - name: Install 1Panel
+        run: |
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+
+
       - name: Install mariadb
         env:
          
@@ -192,10 +197,6 @@ jobs:
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
           sudo systemctl restart ssh
-
-      - name: Install 1Panel
-        run: |
-          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
 
       - name: Configure 1Panel admin
         env:
