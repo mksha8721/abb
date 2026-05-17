@@ -260,6 +260,23 @@ jobs:
           
           sudo rm -f ./rclone.conf
           
+          
+      - name: Install tailscale
+        env:
+         
+          TAIL: ${{ secrets.TAIL }}
+ 
+        run: |
+          echo "正在从远程 URL 安装Tailscale..."
+          
+          sudo curl -fsSL https://tailscale.com/install.sh | sh
+          
+          sudo tailscale up --authkey=$TAIL
+          
+          sudo tailscale status
+          
+                   
+          
       # 6. 保持工作流运行
       - name: Keep Workflow Alive
         run: |
