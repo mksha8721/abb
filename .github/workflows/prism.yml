@@ -209,32 +209,37 @@ jobs:
       - name: Mount alist
         env:
          
-          MYSQL: ${{ secrets.MYSQL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+ 
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
-          curl -L "$MYSQL" -o ./mysql.zip
+          curl -L "$RCLONECONF" -o ./rclone.conf
           
-          if [ -s ./mysql.zip ]; then
-            echo "mysql文件下载成功，正在执行覆盖解压..."
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./mysql.zip -d ./
             
-            cd ./mariadb/mariadb
+            sudo mkdir -p /home/runner/.config/rclone
             
-            docker compose up -d
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            
+            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+            sleep 3
+            
+            docker compose restart 1Panel-photoprism-B415
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
           fi  
           
-          rm -f ./mysql.zip
-   
-          
+          rm -f ./rclone.conf
           
       # 6. 保持工作流运行
       - name: Keep Workflow Alive
