@@ -216,7 +216,7 @@ jobs:
           
         run: |
         
-          1pctl user-info
+          sudo 1pctl user-info
           
           echo "$USER" | sudo 1pctl update username
           
