@@ -7,7 +7,7 @@ services:
       - "5244:5244"
     volumes:
       - ./alist-data:/opt/alist/data
-      - /home:/mnt/home
+      - /:/aaa
     environment:
       - PUID=0
       - PGID=0
