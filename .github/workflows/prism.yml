@@ -140,7 +140,7 @@ jobs:
         if: steps.cache-docker.outputs.cache-hit != 'true'
         run: |
           echo "无缓存，正在从网络全量拉取 Docker 镜像..."
-          cd ./prism
+          
           docker compose pull
           mkdir -p /tmp/.buildx-cache
           # 将拉取下来的所有大镜像打包归档到缓存目录中
@@ -151,7 +151,7 @@ jobs:
         env:
           CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
         run: |
-          cd ./prism
+         
           
           docker compose up -d
           echo "正在等待所有服务完成基础初始化..."
@@ -173,10 +173,10 @@ jobs:
           if [ -s ./data.zip ]; then
             echo "备份文件下载成功，正在执行覆盖解压..."
             
-            cd ./prism
+            
             docker compose stop alist
             
-            cd ../
+           
             echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
             sudo rm -rf ./alist-data
             sudo mkdir -p ./alist-data
@@ -186,7 +186,7 @@ jobs:
             
             echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
             
-            cd ./prism
+           
             docker compose start alist
             
             echo "6. 强制同步最终登录管理员密码..."
@@ -197,7 +197,7 @@ jobs:
             exit 1
           fi
           
-          cd ../
+         
           sudo rm -f ./data.zip
 
 
