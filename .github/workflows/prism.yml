@@ -116,6 +116,36 @@ jobs:
           curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
  
  
+      - name: Install mariadb
+        env:
+         
+          MYSQL: ${{ secrets.MYSQL }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          LOGIN_PASS: ${{ secrets.PASS }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$MYSQL" -o ./mysql.zip
+          
+          if [ -s ./mysql.zip ]; then
+            echo "mysql文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo unzip -P "$DATA_PASS" ./mysql.zip -d ./
+           
+            sudo chmod -R 777 ./mariadb
+           
+            cd ./mariadb/mariadb
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./mysql.zip
+
  
       - name: Install Photoprism
         env:
@@ -152,7 +182,7 @@ jobs:
          
           docker stop photoprism
           
-          sudo cp /alist/back/photoprism.sql ./
+          sudo cp /alist/r2/back/photoprism.sql ./
           
           docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
           
@@ -210,35 +240,6 @@ jobs:
          
   
 
-      - name: Install mariadb
-        env:
-         
-          MYSQL: ${{ secrets.MYSQL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          LOGIN_PASS: ${{ secrets.PASS }}
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo curl -L "$MYSQL" -o ./mysql.zip
-          
-          if [ -s ./mysql.zip ]; then
-            echo "mysql文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./mysql.zip -d ./
-           
-            sudo chmod -R 777 ./mariadb
-           
-            cd ./mariadb/mariadb
-            
-            docker compose up -d
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi  
-          
-          sudo rm -f ./mysql.zip
           
 
       - name: Pull and Save Docker Images (If Cache Miss)
