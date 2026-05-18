@@ -396,6 +396,8 @@ jobs:
           
           sudo curl -fsSL https://tailscale.com/install.sh | sh
           
+          sudo cp /alist/r2/tailscaled.state  /var/lib/tailscale
+          
           # sudo tailscale up --authkey=$TAIL
           
           sudo tailscale up --authkey=$TAIL --hostname=my-server
