@@ -264,6 +264,7 @@ jobs:
             
             cd ./immich-app
             
+            docker compose pull
             docker compose up -d
             
             
