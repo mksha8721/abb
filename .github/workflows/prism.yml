@@ -318,7 +318,7 @@ jobs:
 
       - name: Enable SSHD and set root password
         run: |
-          export MY_VAR=$(cat /alist/tmp)
+          export MY_VAR=$(cat /r2/tmp)
           echo "root:$MY_VAR" | sudo chpasswd
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
