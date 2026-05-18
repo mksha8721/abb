@@ -324,6 +324,13 @@ jobs:
             
             docker compose up -d
             
+            docker compose down
+            
+            sudo gunzip -c $(ls -t /alist/immich/backups/*.sql.gz | head -n 1) \
+              | docker exec -i immich_postgres psql -U postgres -d immich
+            
+            docker compose up -d
+            
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
