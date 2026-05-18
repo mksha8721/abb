@@ -292,12 +292,11 @@ jobs:
             
             docker compose up -d
             
-            docker stop immich_server
             
             sudo gunzip -c $(ls -t /alist/immich/backups/*.sql.gz | head -n 1) \
               | docker exec -i immich_postgres psql -U postgres -d immich
             
-            docker start immich_server
+            docker restart immich_server
             
             
           else
