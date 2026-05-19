@@ -1,0 +1,413 @@
+name: Run AList and Tunnel Photoprism1
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch: # 支持手动点击触发
+
+jobs:
+  run-service:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ================= 【缓存优化 1：APT 包管理器缓存】 =================
+      - name: Cache APT Packages
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-rclone-fuse3-expect
+
+      - name: Install Dependencies (unzip, rclone, fuse3)
+        run: |
+          sudo apt-get update
+          # 如果缓存命中了，apt 会直接从本地归档目录极速安装，不再走公网下载
+          sudo apt-get install -y unzip rclone fuse3 expect
+          
+          #sudo mkdir -p /alist
+          
+          
+          
+
+
+      - name: Pull Docker Images
+
+        run: |
+          echo "=== 运行期状态调试 ==="
+          echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
+          
+          echo "正在拉取 Docker 镜像..."
+          docker compose -f ./docker-compose1.yml pull
+
+          
+
+      - name: Mount s3
+        env:
+         
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+ 
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$RCLONECONF" -o ./rclone.conf
+          
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            
+            sudo mkdir -p /home/runner/.config/rclone
+            sudo mkdir -p /root/.config/rclone
+           
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            #sleep 3
+            
+            #sudo rm -r /alist/r2
+            
+            sudo mkdir -p /alist
+            
+            sudo mkdir -p /r2
+            
+            sudo rclone mount r2:action /r2 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./rclone.conf
+          
+          
+                    
+
+      - name: Install 1Panel
+        run: |
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+          
+      
+          
+      - name: Restore 1Panel
+        env:
+          #PANEL: ${{ secrets.PANEL }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo cp /r2/back/panel.zip ./
+          
+          if [ -s ./panel.zip ]; then
+            echo "panel文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo 1pctl stop 
+            
+            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
+           
+            sudo chmod -R 777 ./1panel
+           
+            sudo rm -rf /opt/1panel
+            
+            sudo cp -r ./1panel /opt
+            
+            sudo 1pctl start
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./panel.zip
+
+
+
+      # 3. 启动所有 Docker 容器
+      - name: Start Services and Cloudflare Tunnel
+        env:
+          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        run: |
+         
+          
+          docker compose up -d
+          
+          echo "正在等待所有服务完成基础初始化..."
+          #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
+
+
+      # 4. 下载物理 data.zip 备份并无损解压还原
+      - name: Restore alist
+        env:
+          #DATA_URL: ${{ secrets.DATA_URL }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+          #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+
+          
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /r2/back/data.zip ./
+          
+          if [ -s ./data.zip ]; then
+            echo "备份文件下载成功，正在执行覆盖解压..."
+            
+            
+            docker stop alist
+            
+           
+            echo "3. 清理宿主机空挂载目录，并直接解压物理备份到挂载点..."
+            sudo rm -rf ./alist-data
+            #sudo mkdir -p ./alist-data
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo unzip -P "$DATA_PASS" ./data.zip -d ./
+            
+            
+            sudo chmod -R 777 ./alist-data
+            
+            
+            echo "5. 重新拉起 AList 容器，无缝加载刚刚恢复的物理数据库..."
+            
+           
+            docker start alist
+            
+            echo "6. 强制同步最终登录管理员密码..."
+            #docker exec alist /opt/alist/alist admin set "$LOGIN_PASS"
+            echo "配置物理恢复完成！"         
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+         
+          sudo rm -f ./data.zip
+
+
+      - name: Enable SSHD and set root password
+        run: |
+          export MY_VAR=$(cat /r2/back/tmp)
+          echo "root:$MY_VAR" | sudo chpasswd
+          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+          
+       
+      - name: Mount alist
+        #env:
+          #RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+            
+            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+          
+          
+          
+      - name: Install mariadb
+        #env:
+          #MYSQL: ${{ secrets.MYSQL }}
+          #DATA_PASS: ${{ secrets.DATA_PASS }}
+          #LOGIN_PASS: ${{ secrets.PASS }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          
+          #sudo curl -L "$PRISM" -o ./prism.zip
+          
+          cd /opt/1panel/apps/mariadb/mariadb1
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+ 
+            
+ 
+
+      - name: Install Photoprism
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+          
+          #sudo curl -L "$PRISM" -o ./prism.zip
+          
+          cd /opt/1panel/apps/photoprism/photoprism
+          
+          #sudo mv .env.txt .env
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+          
+          echo  "Restore Photoprism sql..."
+         
+          #docker stop photoprism
+          
+          #sudo cp /r2/back/photoprism.sql ./
+          
+          #docker exec -i 1Panel-mariadb-rh6u  mariadb -u root -pmariadb_yd6bBF photoprism_z6sizw < ./photoprism.sql
+          
+          #docker start photoprism
+          
+          #sudo rm -f ./photoprism.sql
+          
+          #sudo rm -f ./prism.zip
+          
+ 
+      - name: Install meilisearch
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+        
+          
+          cd /opt/1panel/apps/meilisearch/meilisearch
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+ 
+ 
+      - name: Install rustdesk
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+        
+          
+          cd /opt/1panel/apps/rustdesk/rustdesk
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "prism文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+ 
+ 
+            
+      - name: Restore file
+        run: |
+          
+          echo "复制新文件..."
+          
+          # 使用前面已经安装/缓存好的解压命令
+          sudo cp -r /r2/back/root/  /
+          
+          #sudo cp /r2/back/shadow /etc
+          
+          #sudo awk -v newroot="$(cat /r2/back/shadow)" 'BEGIN{FS=OFS=":"}$1=="root"{print newroot;next}{print}' /etc/shadow | sudo tee /etc/shadow >/dev/null
+                   
+       
+      
+
+      - name: Configure 1Panel admin
+        run: |
+        
+          #sudo 1pctl user-info
+          
+          #echo "$USER" | sudo 1pctl update username
+          
+          #sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
+          
+          #echo "20333" | sudo 1pctl update port
+          
+  
+         
+      - name: Install Immich
+          
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+ 
+          
+          cd /opt/1panel/apps/immich-app 
+          
+          
+          if [ -s ./docker-compose.yml ]; then
+            echo "Immich文件下载成功，正在执行覆盖解压..."
+            
+            docker compose up -d
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            
+          fi
+
+    
+    
+    
+            
+      - name: Install tailscale
+        env:
+         
+          TAIL: ${{ secrets.TAIL }}
+ 
+        run: |
+          echo "正在从远程 URL 安装Tailscale..."
+          sudo mkdir -p /var/lib/tailscale
+          
+          sudo cp /alist/r2/tailscaled.state  /var/lib/tailscale
+          
+          
+          sudo curl -fsSL https://tailscale.com/install.sh | sh
+          
+          sudo nohup tailscaled --state=/var/lib/tailscale/tailscaled.state >/dev/null 2>&1 &
+         
+          # sudo tailscale up --authkey=$TAIL
+          
+          #sleep 3
+
+          echo "Running tailscale up..."
+          
+          sudo tailscale up \
+            --authkey=${{ secrets.TAIL }} \
+            --hostname=github-actions-runner \
+            --accept-routes \
+            --accept-dns=false
+          
+          sudo tailscale status
+          
+          
+        # 6. 保持工作流运行
+      #- name: Restore Immich
+        #run: |
+          
+
+          #echo "恢复immich..."
+          
+          #sudo gunzip -c $(ls -t /alist/immich/backups/*.sql.gz | head -n 1) | docker exec -i immich_postgres psql -U postgres -d immich
+            
+          #docker restart immich_server
+                   
+          
+      # 6. 保持工作流运行
+      - name: Keep Workflow Alive
+        run: |
+          echo "=================================================="
+          echo "【极速启动成功】所有服务、网络及物理挂载均已就绪！"
+          echo "=================================================="
+          while true; do sleep 60; done
