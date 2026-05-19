@@ -68,6 +68,49 @@ jobs:
           fi  
           
           sudo rm -f ./rclone.conf
+          
+          
+                    
+
+      - name: Install 1Panel
+        run: |
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+          
+      
+          
+      - name: Restore 1Panel
+        env:
+          #PANEL: ${{ secrets.PANEL }}
+          DATA_PASS: ${{ secrets.DATA_PASS }}
+          
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo cp /r2/back/panel.zip ./
+          
+          if [ -s ./panel.zip ]; then
+            echo "panel文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            sudo 1pctl stop 
+            
+            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
+           
+            sudo chmod -R 777 ./1panel
+           
+            sudo rm -rf /opt/1panel
+            
+            sudo cp -r ./1panel /opt
+            
+            sudo 1pctl start
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./panel.zip
 
 
       # ================= 【缓存优化 2：Docker 镜像层缓存】 =================
@@ -101,6 +144,7 @@ jobs:
           mkdir -p /tmp/.buildx-cache
           # 将拉取下来的所有大镜像打包归档到缓存目录中
           docker save $(docker compose config | grep 'image:' | awk '{print $2}' | sort | uniq) -o /tmp/.buildx-cache/images.tar
+
 
       # 3. 启动所有 Docker 容器
       - name: Start Services and Cloudflare Tunnel
@@ -179,79 +223,6 @@ jobs:
             
             sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
             
-  
-          
-      - name: Reatore lucky
-        env:
-          #LUCKY: ${{ secrets.LUCKY }}
-          #LOGIN_PASS: ${{ secrets.PASS }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          #curl -L "$LUCKY" -o ./lucky.zip
-          
-          docker stop lucky
-          
-          sudo rm -rf ./lucky
-          
-          sudo cp /r2/back/lucky.zip ./
-          
-          
-          if [ -s ./lucky.zip ]; then
-            echo "lucky文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo unzip -P "$DATA_PASS" ./lucky.zip -d ./
-            
-            docker start lucky
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-        
-          fi
-          rm -f ./lucky.zip
-          
-
-      - name: Install 1Panel
-        run: |
-          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
-          
-      
-          
-      - name: Restore 1Panel
-        env:
-          #PANEL: ${{ secrets.PANEL }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
-          
-        run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo cp /r2/back/panel.zip ./
-          
-          if [ -s ./panel.zip ]; then
-            echo "panel文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            sudo 1pctl stop 
-            
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
-           
-            sudo chmod -R 777 ./1panel
-           
-            sudo rm -rf /opt/1panel
-            
-            sudo cp -r ./1panel /opt
-            
-            sudo 1pctl start
-            
-            
-          else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
-            exit 1
-          fi  
-          
-          sudo rm -f ./panel.zip
           
           
           
