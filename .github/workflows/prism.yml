@@ -191,6 +191,10 @@ jobs:
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
           #curl -L "$LUCKY" -o ./lucky.zip
           
+          docker stop lucky
+          
+          sudo rm -rf ./lucky
+          
           sudo cp /r2/back/lucky.zip ./
           
           
@@ -199,6 +203,8 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令
             sudo unzip -P "$DATA_PASS" ./lucky.zip -d ./
+            
+            docker start lucky
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
