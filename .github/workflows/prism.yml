@@ -175,6 +175,22 @@ jobs:
           
           echo "正在拉取 Docker 镜像..."
           docker compose -f ./docker-compose1.yml pull
+          
+          
+                    
+      # === 安装 1Panel（原步骤） ===
+      - name: Install 1Panel
+        id: step_1panel
+        continue-on-error: true
+        run: |
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+          
+      # === 安装 1Panel（重试步骤，仅在失败时触发） ===
+      - name: Install 1Panel - Retry
+        if: steps.step_1panel.outcome == 'failure'
+        run: |
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
+
 
 
       # === 挂载 s3（原步骤） ===
@@ -257,19 +273,6 @@ jobs:
           
           sudo rm -f ./rclone.conf
           
-          
-      # === 安装 1Panel（原步骤） ===
-      - name: Install 1Panel
-        id: step_1panel
-        continue-on-error: true
-        run: |
-          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
-          
-      # === 安装 1Panel（重试步骤，仅在失败时触发） ===
-      - name: Install 1Panel - Retry
-        if: steps.step_1panel.outcome == 'failure'
-        run: |
-          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo bash
           
       
       # === 恢复 1Panel（原步骤） ===
@@ -772,38 +775,6 @@ jobs:
           # sudo tailscale up --authkey=$TAIL
           #sleep 3
 
-          echo "🔍 正在计算从【任务真正开始】至今的时间..."
-          echo "=================================================="
-          
-          # 🌟 改为读取第一步记录的绝对真实时间戳
-          START_TIME=$REAL_START_TIME
-          CURRENT_TIME=$(date +%s)
-          ELAPSED=$((CURRENT_TIME - START_TIME))
-          TARGET_WAIT=180 # 3分钟 = 180秒
-          
-          if [ $ELAPSED -lt $TARGET_WAIT ]; then
-            WAIT_TIME=$((TARGET_WAIT - ELAPSED))
-            echo "⏰ 任务实际只运行了 ${ELAPSED} 秒，未满 3 分钟。"
-            echo "⏳ 还需要原地等待 ${WAIT_TIME} 秒..."
-            echo "=================================================="
-            sleep $WAIT_TIME
-          else
-            echo "✅ 任务从真正开始到现在已过去 ${ELAPSED} 秒（已超 3 分钟），无需等待！"
-            echo "=================================================="
-          fi          
-
-
-          echo "Running tailscale up..."
-          
-          docker start cloudflared-tunnel
-          
-          sudo tailscale up \
-            --authkey=${{ secrets.TAIL }} \
-            --hostname=github-actions-runner \
-            --accept-routes \
-            --accept-dns=false
-          
-          #sudo tailscale status
 
       # === 安装 Tailscale（重试步骤，仅在失败时触发） ===      
       - name: Install tailscale - Retry
@@ -822,7 +793,11 @@ jobs:
          
           # sudo tailscale up --authkey=$TAIL
           #sleep 3
-          
+
+
+      - name: Delay start tailscale
+        run: |
+
           echo "🔍 正在计算从【任务真正开始】至今的时间..."
           echo "=================================================="
           
@@ -843,6 +818,7 @@ jobs:
             echo "=================================================="
           fi          
 
+
           echo "Running tailscale up..."
           
           docker start cloudflared-tunnel
@@ -854,7 +830,9 @@ jobs:
             --accept-dns=false
           
           #sudo tailscale status
-          
+
+
+
           
         # 6. 保持工作流运行
       #- name: Restore Immich
@@ -920,7 +898,7 @@ jobs:
                 exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
               fi
               
-              sleep 180
+              #sleep 130
 
               break
             fi
