@@ -464,9 +464,9 @@ jobs:
           echo "=================================================="
           
           # 1. 设置时间（5小时55分钟 = 21300秒）
-          #DURATION=21300 
+          DURATION=21300 
           
-          DURATION=300 
+          #DURATION=300 
           
           
           
@@ -511,6 +511,7 @@ jobs:
                 cat response.json
                 exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
               fi
+              sleep 30
 
               break
             fi
