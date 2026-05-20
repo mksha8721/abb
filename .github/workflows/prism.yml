@@ -417,7 +417,11 @@ jobs:
           echo "=================================================="
           
           # 1. 设置时间（5小时55分钟 = 21300秒）
-          DURATION=21300 
+          #DURATION=21300 
+          
+          DURATION=300 
+          
+          
           
           START_TIME=$(date -u +%s)
           END_TIME=$((START_TIME + DURATION))
