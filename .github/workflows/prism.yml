@@ -117,8 +117,8 @@ jobs:
           fi
           
           #退出当前任务
-          gh run cancel ${{ github.run_id }}
-
+          #gh run cancel ${{ github.run_id }}
+          exit 1
 
           
       # ================= 【缓存优化 1：APT 包管理器缓存】 =================
