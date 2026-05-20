@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }} # 记得去 Settings 开启 Read and write permissions
+          token: ${{ secrets.SYNCTOKEN }} # 记得去 Settings 开启 Read and write permissions
     
       # 【核心安全机制】判断当前运行的仓库是否为主仓库
       - name: Check and Sync Repository
