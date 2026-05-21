@@ -162,6 +162,90 @@ jobs:
           # 备用方案：如果上面失败，走传统的 apt-get 强行安装
           sudo apt-get update
           sudo apt-get install -y rclone fuse3 expect
+         
+         
+          
+       # === 挂载 s3（原步骤） ===
+      - name: Mount s3
+        id: step_mount
+        continue-on-error: true
+        env:
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$RCLONECONF" -o ./rclone.conf
+          
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            
+            sudo mkdir -p /home/runner/.config/rclone
+            sudo mkdir -p /root/.config/rclone
+           
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            #sleep 3
+            
+            #sudo rm -r /alist/r2
+            
+            sudo mkdir -p /alist
+            
+            sudo mkdir -p /r3
+            
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./rclone.conf
+
+      # === 挂载 s3（重试步骤，仅在失败时触发） ===
+      - name: Mount s3 - Retry
+        if: steps.step_mount.outcome == 'failure'
+        env:
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$RCLONECONF" -o ./rclone.conf
+          
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            
+            sudo mkdir -p /home/runner/.config/rclone
+            sudo mkdir -p /root/.config/rclone
+           
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            #sleep 3
+            
+            #sudo rm -r /alist/r2
+            
+            sudo mkdir -p /alist
+            
+            sudo mkdir -p /r3
+            
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./rclone.conf
+          
+          
 
       # === 拉取镜像（原步骤） ===
       - name: Pull Docker Images
@@ -172,7 +256,10 @@ jobs:
           echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
           
           echo "正在拉取 Docker 镜像..."
-          docker compose -f ./docker-compose1.yml pull
+          
+          cd /r3/back
+          
+          docker compose pull
 
       # === 拉取镜像（重试步骤，仅在失败时触发） ===
       - name: Pull Docker Images - Retry
@@ -182,8 +269,11 @@ jobs:
           echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
           
           echo "正在拉取 Docker 镜像..."
-          docker compose -f ./docker-compose1.yml pull
           
+          cd /r3/back
+          
+          docker compose pull
+     
        
       # 3. 启动所有 Docker 容器（原步骤）
       - name: Start Services and  Tunnel
