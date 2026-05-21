@@ -949,7 +949,7 @@ jobs:
             cat response.json
                # 触发失败时，强行中断并让当前 Action 报错显红
                
-            sleep 300
+            sleep 30
                
             HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
               -H "Accept: application/vnd.github+json" \
