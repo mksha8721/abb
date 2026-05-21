@@ -799,6 +799,8 @@ jobs:
 
       - name: Delay start tailscale
         id: Delay_start
+        continue-on-error: true
+
         run: |
 
           echo "🔍 正在计算从【任务真正开始】至今的时间..."
@@ -834,6 +836,14 @@ jobs:
           
           #sudo tailscale status
 
+      - name: failure start
+        if: steps.Delay_start.outcome == 'failure'
+        
+        run: |
+        
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。")"
+          
+          exit 1
 
 
           
@@ -846,6 +856,8 @@ jobs:
                    
       # 6. 保持工作流运行
       - name: Keep Workflow Alive
+        id: Keep_start
+        continue-on-error: true
         env:
           TOKEN: ${{ secrets.TOKEN }} 
           GH_URL: ${{ secrets.GH_URL }} 
@@ -886,67 +898,6 @@ jobs:
               echo "即将退出..."
               echo "=================================================="
              
-              
-              
-              # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
-              HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "$GH_URL" \
-                -d '{"event_type": "mksha_trigger"}')
-
-              echo "GitHub API 响应状态码: $HTTP_STATUS"
-              
-              # GitHub 触发成功的标准状态码是 204
-              if [ "$HTTP_STATUS" -eq 204 ]; then
-                echo "=================================================="
-                echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
-                
-                
-                sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！")"
-  
-                
-                echo "=================================================="
-                cat response.json 2>/dev/null || true
-              else
-                echo "=================================================="
-                echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
-                echo "错误响应内容如下："
-                echo "=================================================="
-                cat response.json
-               # 触发失败时，强行中断并让当前 Action 报错显红
-               
-                sleep 300
-               
-                HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                "$GH_URL" \
-                -d '{"event_type": "mksha_trigger"}')
-
-                if [ "$HTTP_STATUS" -eq 204 ]; then
-                
-                  echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！" 
-                  
-                  sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！")"
-  
-                  
-                else 
-                
-                  echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
-                  
-                  sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。")"
-  
-                
-                fi
-                
-              fi
-              
-              
-              sudo bash /opt/1panel/task/all.sh
-              
 
               break
             fi
@@ -954,6 +905,79 @@ jobs:
             sleep 30
           done
           
+          
+      - name: failure keep
+        if: steps.Keep_start.outcome == 'failure'
+        
+        run: |
+        
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。")"
+          
+        
+      # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
+      - name: Auto Backup
+        if: steps.Keep_start.outcome == 'success'
+        
+        run: |
+          # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$GH_URL" \
+            -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            
+          
+            sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "​✅【触发成功】API 请求已成功送达，目标工作流已启动！")"
+            
+                
+            echo "=================================================="
+         
+            cat response.json 2>/dev/null || true
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+                echo "=================================================="
+            cat response.json
+               # 触发失败时，强行中断并让当前 Action 报错显红
+               
+            sleep 300
+               
+            HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "$GH_URL" \
+              -d '{"event_type": "mksha_trigger"}')
+
+            if [ "$HTTP_STATUS" -eq 204 ]; then
+                
+              echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！" 
+                  
+              sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "​✅【触发成功】API 请求已成功送达，目标工作流已启动！")"
+                  
+            else 
+                
+              echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+                  
+              sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。")"
+  
+                
+            fi
+                
+          fi
+              
+              
+          sudo bash /opt/1panel/task/all.sh
+    
           
        # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
       - name: Auto Backup on Cancel
