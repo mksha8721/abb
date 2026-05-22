@@ -487,8 +487,8 @@ jobs:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          curl -L "$DATA_URL" -o ./data.zip
-          #sudo cp /r2/back/data.zip ./
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /r2/back/data.zip ./
           
           if [ -s ./data.zip ]; then
             echo "备份文件下载成功，正在执行覆盖解压..."
@@ -528,8 +528,8 @@ jobs:
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-          curl -L "$DATA_URL" -o ./data.zip
-          #sudo cp /r2/back/data.zip ./
+          #curl -L "$DATA_URL" -o ./data.zip
+          sudo cp /r2/back/data.zip ./
           
           if [ -s ./data.zip ]; then
             echo "备份文件下载成功，正在执行覆盖解压..."
