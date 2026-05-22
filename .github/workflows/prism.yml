@@ -885,6 +885,10 @@ jobs:
 
 
           echo "Running tailscale up..."
+         
+          #stop other
+          echo "stop other on successful"
+          curl $(cat /alist/stop)
           
           docker start cloudflared-tunnel
           
@@ -924,7 +928,7 @@ jobs:
           echo "=================================================="
           
           # 1. 设置时间（5小时30分钟 = 19800）
-          DURATION=19800
+          DURATION=150
           
           #DURATION=300 
           
@@ -969,7 +973,7 @@ jobs:
           
         
       # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
-      - name: Auto Backup
+      - name: Auto Backup on EndTime
         if: steps.Keep_start.outcome == 'success'
         
         run: |
@@ -1031,6 +1035,9 @@ jobs:
               
               
           sudo bash /opt/1panel/task/all.sh
+          
+          sudo python3 /opt/1panel/task/stop.py
+          
     
           
        # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
