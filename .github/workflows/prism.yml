@@ -643,16 +643,60 @@ jobs:
               # 进入该一级目录并启动容器
               cd "$app_dir"
               
+              
               docker compose up -d || true
               
               
             fi
           done
           echo "🎉 所有检测到的 1Panel 应用已尝试启动完成！"
+          
+          
+          echo "=================================================="
+          echo "⚠️ 正在执行 1Panel 应用批量启动重试..."
+          echo "=================================================="
+          
+          for app_dir in /opt/1panel/apps/*; do
+            if [ -d "$app_dir" ] && [ -f "$app_dir/docker-compose.yml" ]; then
+              echo "🔄 [重试] 正在拉起目录下的容器: $app_dir"
+              app_name=$(basename "$app_dir")
+              
+              cd "$app_dir"
+              
+              docker compose up -d > log.txt 2>&1 || true
+              
+              if grep -qiE "Running" log.txt; then
+              
+                if grep -qiE "Error|failed" log.txt; then
+                
+                    echo "❌$app_name 启动失败" 
+                
+                    sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【应用】$app_name 启动失败！请检查 YML 配置。${{ github.repository }}")"
+
+                else
+                
+                    echo "✅$app_name 启动成功" 
+                
+                fi
+              
+              else 
+              
+                echo "❌$app_name 启动失败" 
+                
+                sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【应用】$app_name 启动失败！请检查 YML 配置。${{ github.repository }}")"
+
+
+              fi
+              
+            fi
+          done
+          
+          
+          
 
       # === 批量自动启动（重试步骤，仅在失败时触发） ===
       - name: Auto Discover and Install 1Panel Apps - Retry
-        if: steps.step_auto_apps.outcome == 'failure'
+        if: steps.step_auto_apps.outcome == 'failure1'
         id: step_auto_apps_retry
         continue-on-error: true
         run: |
@@ -663,6 +707,7 @@ jobs:
           for app_dir in /opt/1panel/apps/*; do
             if [ -d "$app_dir" ] && [ -f "$app_dir/docker-compose.yml" ]; then
               echo "🔄 [重试] 正在拉起目录下的容器: $app_dir"
+              app_name=$(basename "$app_dir")
               
               cd "$app_dir"
               
@@ -672,21 +717,21 @@ jobs:
               
                 if grep -qiE "Error|failed" log.txt; then
                 
-                    echo "❌$app_dir 启动失败" 
+                    echo "❌$app_name 启动失败" 
                 
-                    sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【应用】$app_dir 启动失败！请检查 YML 配置。${{ github.repository }}")"
+                    sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【应用】$app_name 启动失败！请检查 YML 配置。${{ github.repository }}")"
 
                 else
                 
-                    echo "✅$app_dir 启动成功" 
+                    echo "✅$app_name 启动成功" 
                 
                 fi
               
               else 
               
-                echo "❌$app_dir 启动失败" 
+                echo "❌$app_name 启动失败" 
                 
-                sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【应用】$app_dir 启动失败！请检查 YML 配置。${{ github.repository }}")"
+                sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【应用】$app_name 启动失败！请检查 YML 配置。${{ github.repository }}")"
 
 
               fi
