@@ -643,7 +643,7 @@ jobs:
               # 进入该一级目录并启动容器
               cd "$app_dir"
               
-              docker compose up -d
+              docker compose up -d || true
               
               
             fi
