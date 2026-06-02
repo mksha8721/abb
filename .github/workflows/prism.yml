@@ -41,28 +41,41 @@ jobs:
       - name: Cleanup Disk Space (Free up to 30GB+)
         run: |
           echo "=== Before Cleanup ==="
-          #df -h
+          
+          SIZE=$(df -B1 / | awk 'NR==2 {print $2}') 
+          
+          if [ "$SIZE" -gt $((100*1024*1024*1024)) ]; then 
+          
+            echo "大于100GB" 
+            
+          else 
+          
+            echo "小于100GB" 
+            
+            # 删除不需要的系统软件和工具链
+            # 5gb
+            sudo rm -rf /usr/share/dotnet
+          
+            # 10g
+            sudo rm -rf /usr/local/lib/android
+          
+            sudo rm -rf /opt/ghc
+          
+          
+            sudo rm -rf /usr/local/share/boost
+          
+            # 6gb
+            sudo rm -rf "$AGENT_TOOLSDIRECTORY"
     
-          # 删除不需要的系统软件和工具链
-          # 5gb
-          sudo rm -rf /usr/share/dotnet
-          
-          # 10g
-          sudo rm -rf /usr/local/lib/android
-          
-          sudo rm -rf /opt/ghc
-          
-          
-          sudo rm -rf /usr/local/share/boost
-          
-          # 6gb
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+            # 彻底清理 Docker 缓存和残留镜像
+            docker system prune -a -f --volumes
     
-          # 彻底清理 Docker 缓存和残留镜像
-          docker system prune -a -f --volumes
+            echo "=== After Cleanup ==="
+            #df -h /
+            
+          fi
     
-          echo "=== After Cleanup ==="
-          #df -h
+          
 
     
     
