@@ -30,6 +30,14 @@ jobs:
     steps:
     
     
+    
+      # 🌟 新增这一步：捕获真正的任务开始时间，并写入全局环境变量
+      - name: Record Real Start Time
+        run: |
+          echo "REAL_START_TIME=$(date +%s)" >> $GITHUB_ENV
+   
+   
+   
       - name: Cleanup Disk Space (Free up to 30GB+)
         run: |
           echo "=== Before Cleanup ==="
@@ -57,13 +65,6 @@ jobs:
           #df -h
 
     
-    
-    
-    
-      # 🌟 新增这一步：捕获真正的任务开始时间，并写入全局环境变量
-      - name: Record Real Start Time
-        run: |
-          echo "REAL_START_TIME=$(date +%s)" >> $GITHUB_ENV
     
       # 1. 签出仓库 B
       - name: Checkout Repo B
