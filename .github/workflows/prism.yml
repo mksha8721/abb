@@ -1016,6 +1016,11 @@ jobs:
         if: steps.Keep_start.outcome == 'success'
         
         run: |
+        
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【开始备份】切勿再写入数据！！！${{ github.repository }}")"
+
+          sleep 60
+        
           # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
           HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
             -H "Accept: application/vnd.github+json" \
@@ -1072,7 +1077,6 @@ jobs:
                 
           fi
               
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【开始备份】切勿再写入数据！！！${{ github.repository }}")"
 
     
           sudo bash /opt/1panel/task/all.sh
