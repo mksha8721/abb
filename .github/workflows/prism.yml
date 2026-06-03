@@ -36,7 +36,13 @@ jobs:
         run: |
           echo "REAL_START_TIME=$(date +%s)" >> $GITHUB_ENV
    
-   
+         # 2. 登录到 Docker Hub (关键步骤)
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: mohicai
+          password: ${{ secrets.DOCKERPULL }}  
+
    
       - name: Cleanup Disk Space (Free up to 30GB+)
         run: |
