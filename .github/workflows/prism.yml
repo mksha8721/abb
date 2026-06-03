@@ -711,6 +711,11 @@ jobs:
         id: step_auto_apps
         continue-on-error: true
         run: |
+        
+          sudo curl -fsSL https://tailscale.com/install.sh | sh 2>&1 &
+        
+          
+        
           echo "=================================================="
           echo "🔍 开始扫描 1Panel 一级应用目录..."
           echo "=================================================="
@@ -942,7 +947,7 @@ jobs:
           
           sudo cp /alist/r2/tailscaled.state  /var/lib/tailscale
           
-          sudo curl -fsSL https://tailscale.com/install.sh | sh
+          
           
           sudo nohup tailscaled --state=/var/lib/tailscale/tailscaled.state >/dev/null 2>&1 &
          
