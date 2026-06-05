@@ -1003,7 +1003,7 @@ jobs:
          
           #stop other
           echo "stop other on successful"
-          curl $(cat /alist/stop)
+          curl $(cat /r2/stop)
           
           docker start cloudflared-tunnel
           
