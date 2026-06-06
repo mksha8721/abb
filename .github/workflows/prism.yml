@@ -783,7 +783,10 @@ jobs:
               
               cd "$app_dir"
               
-              docker compose up -d > log.txt 2>&1 || true
+              #docker compose up -d > log.txt 2>&1 || true
+              
+              sudo bash -c 'docker compose up -d > log.txt 2>&1'
+              
               
               if grep -qiE "Running" log.txt; then
               
@@ -832,7 +835,9 @@ jobs:
               
               cd "$app_dir"
               
-              docker compose up -d > log.txt 2>&1 || true
+              #docker compose up -d > log.txt 2>&1 || true
+              
+              sudo bash -c 'docker compose up -d > log.txt 2>&1'
               
               if grep -qiE "Running" log.txt; then
               
