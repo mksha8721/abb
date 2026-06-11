@@ -703,15 +703,17 @@ jobs:
         #env:
           #RCLONECONF: ${{ secrets.RCLONECONF }}
         run: |
-            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
-            
+          rclone mount mohic:/ /alist --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon      
       # === 挂载 alist（重试步骤，仅在失败时触发） ===
       - name: Mount alist - Retry
         if: steps.step_mount_alist.outcome == 'failure'
         #env:
           #RCLONECONF: ${{ secrets.RCLONECONF }}
         run: |
-            sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+        
+          rclone mount mohic:/ /alist --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon
+          
+            #sudo rclone mount mohic:/ /alist --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
             
          
 
