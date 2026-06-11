@@ -1183,11 +1183,16 @@ jobs:
         
           sudo python3 /opt/1panel/task/stop.py
           
-          docker stop easynvr-app-1
+          docker restart easynvr-app-1
           
-          docker stop AgentDVR
+          docker restart AgentDVR
           
-    
+          sudo rclone copy /alist/easynvr mohic:/easynvr -P
+          
+          sudo rclone copy /alist/ispy mohic:/ispy -P
+          
+          sudo rclone copy /alist/immich/library mohic:/immich/library -P
+          
           
        # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
       - name: Auto Backup on Cancel
