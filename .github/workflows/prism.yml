@@ -1181,6 +1181,10 @@ jobs:
         
           sudo python3 /opt/1panel/task/stop.py
           
+          docker stop easynvr-app-1
+          
+          docker stop AgentDVR
+          
     
           
        # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
