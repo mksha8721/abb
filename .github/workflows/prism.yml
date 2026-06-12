@@ -1058,6 +1058,7 @@ jobs:
         continue-on-error: true
         run: |
           
+          docker restart lucky
           
           wget https://downloads.mitmproxy.org/12.2.3/mitmproxy-12.2.3-linux-x86_64.tar.gz
           
