@@ -264,7 +264,7 @@ jobs:
             
             sudo mkdir -p /r3
             
-            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon
             
             
           else
@@ -304,7 +304,7 @@ jobs:
             
             sudo mkdir -p /r3
             
-            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
@@ -448,7 +448,7 @@ jobs:
             
             sudo mkdir -p /r2
             
-            sudo rclone mount r2:action /r2 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            sudo rclone mount r2:action /r2 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon
             
             
           else
@@ -488,7 +488,7 @@ jobs:
             
             sudo mkdir -p /r2
             
-            sudo rclone mount r2:action /r2 --cache-dir /tmp --vfs-cache-mode full  --allow-other  --daemon
+            sudo rclone mount r2:action /r2 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 50G --dir-cache-time 10s --allow-other --daemon  
             
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
