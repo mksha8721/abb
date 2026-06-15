@@ -508,6 +508,9 @@ jobs:
           #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
+        
+          sudo apt install openjdk-25-jdk    2>&1 & 
+        
           sleep 2
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
           #curl -L "$DATA_URL" -o ./data.zip
@@ -540,6 +543,8 @@ jobs:
           fi
           
           sudo rm -f ./data.zip
+          
+          wait
 
       # 4. 下载物理 data.zip 备份并无损解压还原（重试步骤，仅在失败时触发）
       - name: Restore alist - Retry
@@ -550,6 +555,9 @@ jobs:
           #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
           DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
+          
+          sudo apt install openjdk-25-jdk    2>&1 & 
+          
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
           #curl -L "$DATA_URL" -o ./data.zip
           sudo cp /r2/back/data.zip ./
@@ -581,6 +589,8 @@ jobs:
           fi
           
           sudo rm -f ./data.zip
+          
+          wait
 
          
       
