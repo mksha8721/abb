@@ -1072,7 +1072,11 @@ jobs:
           
           exit 1
 
-
+      - name: ZeroTier
+        uses: zerotier/github-action@v1.0.1
+        with:
+          network_id: 272f5eae166a53a2
+        
           
         # 6. 保持工作流运行
       #- name: Restore Immich
