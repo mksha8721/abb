@@ -1095,6 +1095,8 @@ jobs:
         continue-on-error: true
         run: |
           
+          sudo bash /opt/1panel/task/route.sh
+          
           docker restart lucky
           
           #wget https://downloads.mitmproxy.org/12.2.3/mitmproxy-12.2.3-linux-x86_64.tar.gz           && sudo tar -xvf mitmproxy-12.2.3-linux-x86_64.tar.gz              && sudo chmod 777 mitmdump mitmproxy mitmweb          && sudo ./mitmweb --listen-host 0.0.0.0 --listen-port 5655 --set web_password=Monchan 2>&1 & 
