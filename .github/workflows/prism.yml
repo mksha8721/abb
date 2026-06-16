@@ -1078,6 +1078,7 @@ jobs:
           exit 1
 
       - name: ZeroTier
+        continue-on-error: true
         uses: zerotier/github-action@v1.0.1
         
         
@@ -1094,6 +1095,8 @@ jobs:
         id: Keep_start
         continue-on-error: true
         run: |
+        
+          sudo systemctl restart zerotier-one
           
           sudo bash /opt/1panel/task/route.sh
           
