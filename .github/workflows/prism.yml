@@ -341,7 +341,7 @@ jobs:
           # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
           curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > /tmp/panel.log 2>&1 &
         
-        
+          cp /r3/bedrock_server-1.26.23.1 /bbb/bedrock_server-1.26.23.1  2>&1 &
         
         
           echo "=== 运行期状态调试 ==="
