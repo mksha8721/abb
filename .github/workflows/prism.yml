@@ -1179,7 +1179,7 @@ jobs:
           
           echo "=================================================="
           
-          
+          sudo apt install -y linux-modules-extra-$(uname -r) && sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
       
 
           while true; do
