@@ -1148,6 +1148,12 @@ jobs:
         
           #sudo systemctl restart zerotier-one
           
+          sudo mkdir -p /opt/1panel/tmp/docker_logs/image_build_mohicai/
+          
+          docker buildx create --use
+          docker buildx inspect --bootstrap
+          
+          
           sudo chown -R www-data  /opt/1panel/apps/wordpress
           
           sudo bash /opt/1panel/task/route.sh
