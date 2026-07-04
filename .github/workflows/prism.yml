@@ -1029,6 +1029,18 @@ jobs:
        
       - name: Configure 1Panel admin
         run: |
+          
+          sudo cp -r /opt/1panel/apps/zerotrust/cloudflare-warp /var/lib
+
+          
+          curl https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          
+          sudo apt update && sudo apt-get install -y cloudflare-warp
+          
+          sudo warp-cli content
+
           #sudo 1pctl user-info
           #echo "$USER" | sudo 1pctl update username
           #sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
