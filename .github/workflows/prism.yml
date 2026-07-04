@@ -1039,7 +1039,7 @@ jobs:
           
           sudo apt update && sudo apt-get install -y cloudflare-warp
           
-          sudo warp-cli content
+          sudo warp-cli connect
 
           #sudo 1pctl user-info
           #echo "$USER" | sudo 1pctl update username
