@@ -1030,21 +1030,21 @@ jobs:
       - name: Configure 1Panel admin
         run: |
           
-          sudo cp -r /opt/1panel/apps/zerotrust/cloudflare-warp /var/lib
+          # sudo cp -r /opt/1panel/apps/zerotrust/cloudflare-warp /var/lib
 
           
-          curl https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          # curl https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
 
-          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          # echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
           
-          sudo apt update && sudo apt-get install -y cloudflare-warp
+          # sudo apt update && sudo apt-get install -y cloudflare-warp
           
-          sudo warp-cli --accept-tos  connect
+          # sudo warp-cli --accept-tos  connect
 
-          #sudo 1pctl user-info
-          #echo "$USER" | sudo 1pctl update username
-          #sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
-          #echo "20333" | sudo 1pctl update port
+          # sudo 1pctl user-info
+          # echo "$USER" | sudo 1pctl update username
+          # sudo expect -c "spawn 1pctl update password; expect \"Update panel password:\"; send \"${LOGIN_PASS}\r\"; expect \"Confirm password:\"; send \"${LOGIN_PASS}\r\"; expect eof"
+          #.echo "20333" | sudo 1pctl update port
           
   
     
@@ -1158,7 +1158,7 @@ jobs:
         continue-on-error: true
         run: |
         
-          #sudo systemctl restart zerotier-one
+          # sudo systemctl restart zerotier-one
           sudo iptables -I INPUT -i CloudflareWARP -p icmp -j ACCEPT
           
           sudo mkdir -p /opt/1panel/tmp/docker_logs/image_build_mohicai/
@@ -1173,7 +1173,7 @@ jobs:
           
           docker restart lucky
           
-          #wget https://downloads.mitmproxy.org/12.2.3/mitmproxy-12.2.3-linux-x86_64.tar.gz           && sudo tar -xvf mitmproxy-12.2.3-linux-x86_64.tar.gz              && sudo chmod 777 mitmdump mitmproxy mitmweb          && sudo ./mitmweb --listen-host 0.0.0.0 --listen-port 5655 --set web_password=Monchan 2>&1 & 
+          # wget https://downloads.mitmproxy.org/12.2.3/mitmproxy-12.2.3-linux-x86_64.tar.gz           && sudo tar -xvf mitmproxy-12.2.3-linux-x86_64.tar.gz              && sudo chmod 777 mitmdump mitmproxy mitmweb          && sudo ./mitmweb --listen-host 0.0.0.0 --listen-port 5655 --set web_password=Monchan 2>&1 & 
 
         
           echo "=================================================="
