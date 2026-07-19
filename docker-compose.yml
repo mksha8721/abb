@@ -9,6 +9,7 @@ services:
       - "5566:5566"
     volumes:
       - /home/alist-data:/opt/alist/data
+      - /home/tmp:/opt/alist/data/temp
       - /:/aaa
     environment:
       - PUID=0
