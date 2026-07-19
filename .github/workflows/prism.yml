@@ -827,7 +827,7 @@ jobs:
         
         run: |
         
-          #sudo mkdir -p /bbb
+          # sudo mkdir -p /bbb
         
           echo "正在从远程 URL 安装Tailscale..."
           
@@ -837,13 +837,29 @@ jobs:
           
           sudo cp /r2/xray  /bbb/xray-linux-amd64 && sudo chmod -R 777 /bbb 2>&1 & 
         
+        
           sudo curl -fsSL https://tailscale.com/install.sh | sh > tailscale.log 2>&1 &
-        
-        
-        
+                  
+                   
+          
+            
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo cp /r2/back/panel.zip ./
+          
+          sudo mkdir -p 1panel
+          
+          # sudo cp /r2/back/panel.zip ./
+          
+          sudo rclone copy r2:action/back/panel.zip ./panel.zip \
+            --transfers=8 \
+            --checkers=16 \
+            --s3-chunk-size=128M \
+            --s3-upload-concurrency=8 \
+            --multi-thread-streams=8 \
+            --multi-thread-cutoff=100M \
+            --bwlimit=0 \
+            -P
+          
+          
           
           if [ -s ./panel.zip ]; then
             echo "panel文件下载成功，正在执行覆盖解压..."
@@ -851,13 +867,16 @@ jobs:
             # 使用前面已经安装/缓存好的解压命令
             sudo 1pctl stop 
             
-            sudo unzip -P "$DATA_PASS" ./panel.zip -d ./
-           
-            sudo chmod -R 777 ./1panel
-           
             sudo rm -rf /opt/1panel
             
-            sudo cp -r ./1panel /opt
+            sudo mkdir -p /opt/1panel
+            
+            sudo unzip -P "$DATA_PASS" ./panel.zip -d  /opt/1panel
+           
+            sudo chmod -R 777 /opt/1panel
+           
+          
+            # sudo cp -r ./1panel /opt
             
             sudo 1pctl start
             
@@ -867,18 +886,15 @@ jobs:
             exit 1
           fi  
           
-                    
           sudo cp /r2/back/a.sh /opt/1panel
           
           sudo chmod 777 /opt/1panel/a.sh
           
           sudo rm -f ./panel.zip
           
-          
           wait
           
           cat tailscale.log
-
 
 
       - name: Retart All Job
