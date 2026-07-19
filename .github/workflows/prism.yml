@@ -1295,10 +1295,7 @@ jobs:
 
           echo "Running tailscale up..."
          
-          #stop other
-          echo "stop other on successful"
-          curl $(cat /r2/stop)
-          
+               
           docker start cloudflared-tunnel
           
           sudo tailscale up \
@@ -1308,6 +1305,12 @@ jobs:
             --accept-dns=false
           
           #sudo tailscale status
+
+          #stop other
+          
+          echo "stop other on successful"
+          curl $(cat /r2/stop)
+
 
       - name: failure start
         if: steps.Delay_start.outcome == 'failure'
