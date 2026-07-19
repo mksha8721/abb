@@ -402,7 +402,7 @@ jobs:
         if: steps.step_pull_retry.outcome == 'failure'
         run: |
           
-          sudo cp /r3/back/a.sh /opt
+          sudo cp /r3/back/a.sh /opt || true
           
           #退出当前任务
     
@@ -480,7 +480,7 @@ jobs:
         if: steps.start_tunnel.outcome == 'failure'
         run: |
           
-          sudo cp /r3/back/a.sh /opt
+          sudo cp /r3/back/a.sh /opt || true
           
           #退出当前任务
     
@@ -703,7 +703,7 @@ jobs:
         if: steps.restore_alist.outcome == 'failure'
         run: |
           
-          sudo cp /r3/back/a.sh /opt
+          sudo cp /r3/back/a.sh /opt || true
           
           #退出当前任务
     
@@ -870,7 +870,7 @@ jobs:
         if: steps.restore_1panel.outcome == 'failure'
         run: |
           
-          sudo cp /r3/back/a.sh /opt
+          sudo cp /r3/back/a.sh /opt || true
           
           #退出当前任务
     
@@ -1314,7 +1314,7 @@ jobs:
         
         run: |
         
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"  || true
           
           sudo cp /r3/back/a.sh /opt || true
         
