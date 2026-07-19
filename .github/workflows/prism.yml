@@ -771,7 +771,7 @@ jobs:
           
           # sudo cp /r2/back/panel.zip ./
           
-          sudo rclone copy r2:action/back/panel.zip ./panel.zip \
+          rclone copy r2:action/back/panel.zip ./panel.zip \
             --transfers=8 \
             --checkers=16 \
             --s3-chunk-size=128M \
@@ -849,7 +849,7 @@ jobs:
           
           # sudo cp /r2/back/panel.zip ./
           
-          sudo rclone copy r2:action/back/panel.zip ./panel.zip \
+          rclone copy r2:action/back/panel.zip ./panel.zip \
             --transfers=8 \
             --checkers=16 \
             --s3-chunk-size=128M \
