@@ -462,6 +462,8 @@ jobs:
       # 3. 启动所有 Docker 容器（重试步骤，仅在失败时触发）
       - name: Start Services and  Tunnel - Retry
         if: steps.step_start_srv.outcome == 'failure'
+        id: start_tunnel
+        continue-on-error: true
         env:
           CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
         run: |
@@ -474,7 +476,48 @@ jobs:
           echo "正在等待所有服务完成基础初始化..."
           #sleep 5 # 已经有了后面的死循环检测，这里可以把死等的 15s 缩短到 5s 节约时间
 
+      - name: Retart All Job
+        if: steps.start_tunnel.outcome == 'failure'
+        run: |
           
+          sudo cp /r3/back/a.sh /opt
+          
+          #退出当前任务
+    
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+
+            exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
+          exit 1
+
          
       # === 挂载 s3（原步骤） ===
       - name: Mount s3
@@ -610,6 +653,8 @@ jobs:
       # 4. 下载物理 data.zip 备份并无损解压还原（重试步骤，仅在失败时触发）
       - name: Restore alist - Retry
         if: steps.step_restore_alist.outcome == 'failure'
+        id: restore_alist
+        continue-on-error: true
         env:
           #DATA_URL: ${{ secrets.DATA_URL }}
           #LOGIN_PASS: ${{ secrets.PASS }}
@@ -653,7 +698,49 @@ jobs:
           
           #wait
 
-         
+     
+      - name: Retart All Job
+        if: steps.restore_alist.outcome == 'failure'
+        run: |
+          
+          sudo cp /r3/back/a.sh /opt
+          
+          #退出当前任务
+    
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+
+            exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
+          exit 1
+     
       
       # === 恢复 1Panel（原步骤） ===
       - name: Restore 1Panel
@@ -720,6 +807,9 @@ jobs:
       # === 恢复 1Panel（重试步骤，仅在失败时触发） ===
       - name: Restore 1Panel - Retry
         if: steps.step_restore_1panel.outcome == 'failure'
+        id: restore_1panel
+        continue-on-error: true
+        
         run: |
         
           #sudo mkdir -p /bbb
@@ -773,6 +863,50 @@ jobs:
           wait
           
           cat tailscale.log
+
+
+
+      - name: Retart All Job
+        if: steps.restore_1panel.outcome == 'failure'
+        run: |
+          
+          sudo cp /r3/back/a.sh /opt
+          
+          #退出当前任务
+    
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】restore_1panel成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】restore_1panel失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+
+            exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
+          exit 1
 
 
 
@@ -959,6 +1093,50 @@ jobs:
             fi
           done
           
+
+      - name: Retart All Job
+        if: steps.step_auto_apps_retry.outcome == 'failure'
+        run: |
+          
+          sudo cp /r3/back/a.sh /opt || true
+          
+          #退出当前任务
+    
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】auto_apps_retry成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】step_auto_apps_retry失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+
+            exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
+          exit 1
+
+
  
  
       # === 恢复文件（原步骤） ===      
@@ -1138,7 +1316,44 @@ jobs:
         
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"
           
+          sudo cp /r3/back/a.sh /opt || true
+        
+          #退出当前任务
+    
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Delay_start成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】Delay_start失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+
+            exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
           exit 1
+
 
      # - name: ZeroTier
       #  continue-on-error: true
@@ -1226,8 +1441,47 @@ jobs:
         
         run: |
         
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "$(echo "❌【启动失败】任务启动失败！请检查 YML 配置。${{ github.repository }}")"  || true
           
+          
+          sudo cp /r3/back/a.sh /opt || true
+          
+          #退出当前任务
+    
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Keep_start成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+            
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】Keep_start失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+
+            exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
+          exit 1
+
         
       # 2. 核心：只有当工作流被 Cancel 时，才会触发这个步骤
       - name: Auto Backup on EndTime
