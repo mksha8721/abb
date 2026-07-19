@@ -781,7 +781,7 @@ jobs:
             --bwlimit=0 \
             -P
           
-          
+          ls -ahl
           
           if [ -s ./panel.zip ]; then
             echo "panel文件下载成功，正在执行覆盖解压..."
