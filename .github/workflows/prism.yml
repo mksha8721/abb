@@ -769,7 +769,19 @@ jobs:
           
           sudo mkdir -p 1panel
           
-          sudo cp /r2/back/panel.zip ./
+          #sudo cp /r2/back/panel.zip ./
+          
+          sudo rclone copy r2:action/back/panel.zip ./panel.zip \
+            --transfers=8 \
+            --checkers=16 \
+            --s3-chunk-size=128M \
+            --s3-upload-concurrency=8 \
+            --multi-thread-streams=8 \
+            --multi-thread-cutoff=100M \
+            --bwlimit=0 \
+            -P
+          
+          
           
           if [ -s ./panel.zip ]; then
             echo "panel文件下载成功，正在执行覆盖解压..."
