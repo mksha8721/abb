@@ -354,9 +354,9 @@ jobs:
           
           cd /r3/back
           
-          # docker compose pull
+          docker compose pull
           
-          docker compose config --images | xargs -P 8 -n1 docker pull
+          # docker compose config --images | xargs -P 8 -n1 docker pull
           
           wait
           
