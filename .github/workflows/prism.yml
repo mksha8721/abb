@@ -354,7 +354,9 @@ jobs:
           
           cd /r3/back
           
-          docker compose pull
+          # docker compose pull
+          
+          docker compose config --images | xargs -P 8 -n1 docker pull
           
           wait
           
@@ -1413,9 +1415,6 @@ jobs:
           
           sudo mkdir -p /opt/1panel/tmp/docker_logs/image_build_mohicai/
           
-          docker buildx create --use
-          docker buildx inspect --bootstrap
-          
           
           sudo chown -R www-data  /opt/1panel/apps/wordpress
           
@@ -1449,6 +1448,11 @@ jobs:
           
           
           echo "=================================================="
+          
+          
+          docker buildx create --use
+          docker buildx inspect --bootstrap
+          
           
           sudo apt install -y linux-modules-extra-$(uname -r) && sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
       
