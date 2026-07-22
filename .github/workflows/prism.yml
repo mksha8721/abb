@@ -1450,11 +1450,11 @@ jobs:
           echo "=================================================="
           
           
-          docker buildx create --use
-          docker buildx inspect --bootstrap
+          docker buildx create --use || true
+          docker buildx inspect --bootstrap || true
           
           
-          sudo apt install -y linux-modules-extra-$(uname -r) && sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
+          sudo apt install -y linux-modules-extra-$(uname -r) && sudo modprobe binder_linux devices="binder,hwbinder,vndbinder" || true
           
           docker exec code-server apt update || true
           
