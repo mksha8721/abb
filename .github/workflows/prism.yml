@@ -1456,7 +1456,9 @@ jobs:
           
           sudo apt install -y linux-modules-extra-$(uname -r) && sudo modprobe binder_linux devices="binder,hwbinder,vndbinder"
           
-          docker exec -it code-server apt update && apt install python3
+          docker exec -it code-server apt update
+          
+          docker exec -it code-server apt install python3
       
 
           while true; do
