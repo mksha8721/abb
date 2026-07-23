@@ -218,7 +218,7 @@ jobs:
           
           wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
-          sudo apt-get install -y --no-install-recommends expect fuse3 wireguard-tools
+          sudo apt-get install -y --no-install-recommends expect fuse3 wireguard-tools uvicorn
           
           # 2. 绕过 apt，直接从预编译好的官方渠道拉取最新版 rclone 二进制（速度极快）
           sudo curl -fsSL https://rclone.org/install.sh | sudo bash
@@ -238,7 +238,7 @@ jobs:
           wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
           sudo apt-get update
-          sudo apt-get install -y rclone fuse3 expect
+          sudo apt-get install -y rclone fuse3 expect uvicorn
          
          
           
