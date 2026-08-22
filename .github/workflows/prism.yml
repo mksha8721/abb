@@ -1500,7 +1500,7 @@ jobs:
 
           # 2. 解压并实时导入 MariaDB
 
-          7z e -p"$DATA_PASS" /tmp/mariadb_restore.zip -o/tmp/ -y
+          sudo 7z e -p"$DATA_PASS" /tmp/mariadb_restore.zip -o/tmp/ -y
 
           # 1. 临时关闭 SQL 检查，极速导入 SQL 文件
           docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' \
@@ -1508,7 +1508,7 @@ jobs:
             -e "SET GLOBAL foreign_key_checks = 0; SET GLOBAL unique_checks = 0;"
 
           # 2. 导入数据（完全静默，不吐一字，瞬间完成）
-          docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' < /tmp/all_databases_complete.sql
+          sudo docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' < /tmp/all_databases_complete.sql
 
           # 3. 恢复检查与刷新权限
           docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' \
