@@ -1343,9 +1343,6 @@ jobs:
 
 
           echo "Running tailscale up..."
-         
-         
-          curl $(cat /r2/stop)
 
 
 
@@ -1362,7 +1359,7 @@ jobs:
 
           echo "GitHub API 响应状态码: $HTTP_STATUS"
 
-          
+          docker stop baidu
           
           docker start cloudflared-tunnel
           
@@ -1372,12 +1369,12 @@ jobs:
             --accept-routes \
             --accept-dns=false
           
-          #sudo tailscale status
+          # sudo tailscale status
 
-          #stop other
+          # stop other
           
-          echo "stop other on successful"
-          curl $(cat /r2/stop)
+          # echo "stop other on successful"
+          # curl $(cat /r2/stop)
 
 
       - name: failure start
@@ -1407,7 +1404,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Delay_start成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Delay_start成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -1416,7 +1413,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】Delay_start失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】Delay_start失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
@@ -1491,23 +1488,43 @@ jobs:
           
           # sudo apt install -y linux-modules-extra-$(uname -r) && sudo modprobe binder_linux devices="binder,hwbinder,vndbinder" || true
           
+
+          # 等待传入备份上传完成信号
+          python3 /opt/1panel/task/status.py
+
+          # 1. 从 rclone 挂载目录拷贝备份文件到本地 /tmp
+          cp /r2/back/mariadb.zip /tmp/mariadb_restore.zip
+          
+
+          # 2. 解压并实时导入 MariaDB
+
+          7z e -p"$DATA_PASS" /tmp/mariadb_restore.zip -o/tmp/ -y
+
+          # 1. 临时关闭 SQL 检查，极速导入 SQL 文件
+          docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' \
+            --default-character-set=utf8mb4 \
+            -e "SET GLOBAL foreign_key_checks = 0; SET GLOBAL unique_checks = 0;"
+
+          # 2. 导入数据（完全静默，不吐一字，瞬间完成）
+          docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' < /tmp/all_databases_complete.sql
+
+          # 3. 恢复检查与刷新权限
+          docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' \
+            -e "SET GLOBAL foreign_key_checks = 1; SET GLOBAL unique_checks = 1; FLUSH PRIVILEGES;"
+
+          # 4. 删掉临时 SQL
+          rm -f /tmp/all_databases_complete.sql
+
+          echo "🎉 数据库已成功从 rclone 挂载文件恢复！"
+
+          docker start baidu
+
+
           docker exec code-server apt update || true
           
           docker exec code-server apt install -y python3 || true
       
-          curl $(cat /r2/stop)
           
-          sleep 30
-          
-          curl $(cat /r2/stop)
-          
-          sleep 60
-          
-          curl $(cat /r2/stop)
-          
-          sleep 30
-          
-          curl $(cat /r2/stop)
 
           cd /opt/1panel/apps/code-server/data/workspace/baidu/pan/xianyu && docker compose up -d || true
           
@@ -1557,7 +1574,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Keep_start成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Keep_start成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -1566,7 +1583,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】Keep_start失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】Keep_start失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
@@ -1587,12 +1604,8 @@ jobs:
           docker stop siyuan
           docker stop code-server
           
-          sleep 50
-          
-          docker stop baidu
-          
-          sleep 10
-          
+          sleep 60
+                    
           sudo bash /opt/1panel/task/all.sh > /tmp/back_log.txt 2>&1 &
           
         
@@ -1692,17 +1705,24 @@ jobs:
         
         run: |
           echo "检测到工作流被取消，正在紧急执行备份..."
-          
-          docker stop cloudflared-tunnel
 
-
-          docker exec -i mariadb mariadb-dump -u root -p'mariadb_yd6bBF'   --all-databases   --single-transaction   --quick   --routines   --triggers   --events | gzip > /r2/back/all_databases_complete.sql.gz
-          
-                    
-          
           # 获取当前北京时间作为备份标签
           BACKUP_TIME=$(TZ='Asia/Shanghai' date '+%Y-%m-%d_%H%M%S')
           echo "备份触发时间: $BACKUP_TIME"
+
+          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流被取消，紧急备份时间: $BACKUP_TIME，${{ github.repository }}" 2>&1 & 
+
+          docker stop baidu 2>&1 &
+
+          docker stop cloudflared-tunnel 2>&1 & 
+
+          # 备份sql 并发送备份上传完成信号
+          # 阻塞同步执行：即使 SQL 备份失败，也确保 close.py 信号能够发出
+          sleep 3
+          sudo bash /opt/1panel/task/back_sql.sh > /tmp/back_sql.log 2>&1 || true
+          python3 /opt/1panel/task/close.py || true          
+          
+          
           
           # 执行你的备份脚本（传入你前面测试过的北京时间参数）
           # 注意：请确保 /r2/back/ 等路径或依赖在 Runner 中是存在的，或者改用你的实际备份命令
@@ -1711,10 +1731,7 @@ jobs:
           
           sudo bash /opt/1panel/task/all.sh
           
-          
-          sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流被取消，紧急备份时间: $BACKUP_TIME，${{ github.repository }}"
-          
-          #sudo python3 /opt/1panel/task/stop.py
-          
+                              
           wait
-          
+
+          cat /tmp/back_sql.log || true          
