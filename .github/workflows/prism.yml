@@ -232,7 +232,7 @@ jobs:
         if: steps.step_deps.outcome == 'failure'
         run: |
           # 备用方案：如果上面失败，走传统的 apt-get 强行安装
-          sudo ip addr add 192.168.5.1/24 dev eth0
+          sudo ip addr add 192.168.5.1/24 dev eth0 || true
           
           cd /opt
           
@@ -431,7 +431,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -440,7 +440,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
@@ -509,7 +509,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -518,7 +518,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
@@ -732,7 +732,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -741,7 +741,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
@@ -954,7 +954,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】restore_1panel成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】restore_1panel成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -963,7 +963,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】restore_1panel失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】restore_1panel失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
@@ -1167,7 +1167,7 @@ jobs:
             echo "=================================================="
             cat response.json 2>/dev/null || true
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】auto_apps_retry成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】auto_apps_retry成功，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
             
           else
             echo "=================================================="
@@ -1176,7 +1176,7 @@ jobs:
             echo "=================================================="
             cat response.json
             
-            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】step_auto_apps_retry失败，API 请求送达失败，工作流未重启！${{ github.repository }}")
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发失败】step_auto_apps_retry失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
 
             exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
           fi
