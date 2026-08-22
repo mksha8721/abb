@@ -1525,10 +1525,7 @@ jobs:
           cd /opt/1panel/apps/xianyu && docker compose up -d || true
 
 
-          docker exec code-server apt update || true
-          
-          docker exec code-server apt install -y python3 || true
-      
+          (docker exec code-server bash -c 'apt update && apt install -y python3' || true) >/dev/null 2>&1 &
           
 
           # cd /opt/1panel/apps/code-server/data/workspace/baidu/pan/xianyu && docker compose up -d || true
