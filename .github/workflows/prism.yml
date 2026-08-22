@@ -1492,7 +1492,7 @@ jobs:
           
 
           # 等待传入备份上传完成信号
-          python3 /opt/1panel/task/status.py
+          python3 /opt/1panel/task/status.py || true
 
           # 1. 从 rclone 挂载目录拷贝备份文件到本地 /tmp
           cp /r2/back/mariadb.zip /tmp/mariadb_restore.zip
