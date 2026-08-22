@@ -1495,7 +1495,7 @@ jobs:
           python3 /opt/1panel/task/status.py || true
 
           # 1. 从 rclone 挂载目录拷贝备份文件到本地 /tmp
-          cp /r2/back/mariadb.zip /tmp/mariadb_restore.zip
+          sudo cp /r2/back/mariadb.zip /tmp/mariadb_restore.zip
           
 
           # 2. 解压并实时导入 MariaDB
@@ -1515,7 +1515,7 @@ jobs:
             -e "SET GLOBAL foreign_key_checks = 1; SET GLOBAL unique_checks = 1; FLUSH PRIVILEGES;"
 
           # 4. 删掉临时 SQL
-          rm -f /tmp/all_databases_complete.sql
+          sudo rm -f /tmp/all_databases_complete.sql
 
           echo "🎉 数据库已成功从 rclone 挂载文件恢复！"
 
