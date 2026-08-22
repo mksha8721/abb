@@ -1359,7 +1359,9 @@ jobs:
 
           echo "GitHub API 响应状态码: $HTTP_STATUS"
 
-          docker stop baidu
+          docker stop baidu &
+
+          cd /opt/1panel/apps/xianyu && docker compose down &
           
           docker start cloudflared-tunnel
           
@@ -1517,7 +1519,9 @@ jobs:
 
           echo "🎉 数据库已成功从 rclone 挂载文件恢复！"
 
-          docker start baidu
+          docker start baidu &
+
+          cd /opt/1panel/apps/xianyu && docker compose up -d || true
 
 
           docker exec code-server apt update || true
@@ -1526,7 +1530,7 @@ jobs:
       
           
 
-          cd /opt/1panel/apps/code-server/data/workspace/baidu/pan/xianyu && docker compose up -d || true
+          # cd /opt/1panel/apps/code-server/data/workspace/baidu/pan/xianyu && docker compose up -d || true
           
          
           while true; do
@@ -1712,7 +1716,9 @@ jobs:
 
           sudo bash /opt/1panel/a.sh $(cat /r2/back/ul.txt) $EPASS $(cat /r2/back/to.txt) "工作流被取消，紧急备份时间: $BACKUP_TIME，${{ github.repository }}" 2>&1 & 
 
-          docker stop baidu 2>&1 &
+          docker stop baidu  &
+
+          cd /opt/1panel/apps/xianyu && docker compose down &
 
           docker stop cloudflared-tunnel 2>&1 & 
 
