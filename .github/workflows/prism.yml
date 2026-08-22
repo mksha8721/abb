@@ -1507,8 +1507,9 @@ jobs:
             --default-character-set=utf8mb4 \
             -e "SET GLOBAL foreign_key_checks = 0; SET GLOBAL unique_checks = 0;"
 
-          # 2. 导入数据（完全静默，不吐一字，瞬间完成）
-          sudo docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' < /tmp/all_databases_complete.sql
+
+          # 3. 导入数据（使用 sudo cat 越过权限限制直接管道注入）
+          sudo cat /tmp/all_databases_complete.sql | docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF'
 
           # 3. 恢复检查与刷新权限
           docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' \
