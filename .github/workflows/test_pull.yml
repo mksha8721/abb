@@ -218,27 +218,12 @@ jobs:
           
           wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
-          sudo apt-get install -y --no-install-recommends expect fuse3  uvicorn p7zip-full          
+          sudo apt-get install -y --no-install-recommends expect fuse3          
           # 2. 绕过 apt，直接从预编译好的官方渠道拉取最新版 rclone 二进制（速度极快）
           sudo curl -fsSL https://rclone.org/install.sh | sudo bash
           
           
           
-       
-      # === 依赖安装（重试步骤，仅在失败时触发） ===
-      - name: Install Dependencies (unzip, rclone, fuse3) - Retry
-        if: steps.step_deps.outcome == 'failure'
-        run: |
-          # 备用方案：如果上面失败，走传统的 apt-get 强行安装
-          sudo ip addr add 192.168.5.1/24 dev eth0 || true
-          
-          cd /opt
-          
-          wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
-          
-          sudo apt-get update
-          sudo apt-get install -y rclone fuse3 expect uvicorn p7zip-full  
-         
          
           
        # === 挂载 s3（原步骤） ===
@@ -329,12 +314,6 @@ jobs:
           echo "=== 检查 root 用户的 Docker 登录状态 ==="
           sudo docker info | grep -i "username" || true
 
-      # 1. 停止 Docker 守护进程，释放 /var/lib/docker 的文件锁
-      - name: Stop Docker Service
-        run: |
-          sudo systemctl stop docker.socket || true
-          sudo systemctl stop docker || true
-
       # 1. 缓存 Docker 导出的镜像包（仅占用压缩后大小）
       - name: Cache Docker Images Tar
         id: cache-docker
@@ -342,6 +321,7 @@ jobs:
         with:
           path: /tmp/docker-images.tar
           key: docker-img-${{ hashFiles('/r3/back/docker-compose.yml') }}
+
 
       # 2. 如果缓存命中则加载，未命中则正常 Pull 并保存
       - name: Pull or Load Docker Images
