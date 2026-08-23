@@ -359,7 +359,9 @@ jobs:
           
           cd /r3/back
           
-          sudo -E docker compose pull
+          # sudo -E docker compose pull
+          # 提取 compose 中的镜像列表，利用 xargs -P 8 开启 8 线程并发拉取
+          sudo -E docker compose config --images | sort -u | xargs -P 8 -I {} docker pull {}
           
           # docker compose config --images | xargs -P 8 -n1 docker pull
           
