@@ -329,43 +329,47 @@ jobs:
           echo "=== 检查 root 用户的 Docker 登录状态 ==="
           sudo docker info | grep -i "username" || true
 
-      # === 拉取镜像（原步骤） ===
-      - name: Pull Docker Images
+      # 1. 停止 Docker 守护进程，释放 /var/lib/docker 的文件锁
+      - name: Stop Docker Service
+        run: |
+          sudo systemctl stop docker.socket || true
+          sudo systemctl stop docker || true
+
+      # 1. 缓存 Docker 导出的镜像包（仅占用压缩后大小）
+      - name: Cache Docker Images Tar
+        id: cache-docker
+        uses: actions/cache@v4
+        with:
+          path: /tmp/docker-images.tar
+          key: docker-img-${{ hashFiles('/r3/back/docker-compose.yml') }}
+
+      # 2. 如果缓存命中则加载，未命中则正常 Pull 并保存
+      - name: Pull or Load Docker Images
         id: step_pull
         continue-on-error: true
         run: |
-        
-          # 1. 告诉 1Panel 脚本：Docker 已经安装好了，跳过 Docker 安装逻辑
           export SKIP_DOCKER_INSTALL="true"
-    
-          # 2. 提前设定面板参数，防止脚本卡在交互式输入界面
           export PANEL_PORT="26627"
           export PANEL_ENTRANCE="ec3ec2eabe"
           export PANEL_USERNAME="32ac1597da"
-          export PANEL_PASSWORD="fb107bf8e4" # 建议换成你的安全密码
-    
-          # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
+          export PANEL_PASSWORD="fb107bf8e4"
           curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > /tmp/panel.log 2>&1 &
           
           sudo mkdir -p /bbb
-        
-          sudo cp /r3/bedrock_server-1.26.23.1 /bbb  2>&1 &
-        
-        
-          echo "=== 运行期状态调试 ==="
-          echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
-          
-          echo "正在拉取 Docker 镜像..."
-          
+          sudo cp /r3/bedrock_server-1.26.23.1 /bbb 2>&1 &
+
           cd /r3/back
-          
-          # sudo -E docker compose pull
-          # 提取 compose 中的镜像列表，利用 xargs -P 8 开启 8 线程并发拉取
-          sudo -E docker compose config --images | sort -u | xargs -P 8 -I {} docker pull {}
-          
-          # docker compose config --images | xargs -P 8 -n1 docker pull
-          
+
+          if [ -f /tmp/docker-images.tar ]; then
+            echo "⚡ 找到镜像缓存，正在极速加载..."
+            sudo docker load -i /tmp/docker-images.tar
+          else
+            echo "🐢 缓存未命中，开始拉取并生成缓存包..."
+            sudo -E docker compose pull
+            # 提取 Compose 涉及的所有镜像并导出为 tar
+            IMAGES=$(sudo docker compose config --images | sort -u)
+            sudo docker save $IMAGES -o /tmp/docker-images.tar
+          fi
+
           wait
-          
           cat /tmp/panel.log
-          
