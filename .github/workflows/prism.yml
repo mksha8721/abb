@@ -1716,7 +1716,7 @@ jobs:
 
           docker stop baidu  &
 
-          cd /opt/1panel/apps/xianyu && docker compose down &
+          cd /opt/1panel/apps/xianyu && docker compose stop &
 
           docker stop cloudflared-tunnel 2>&1 & 
 
