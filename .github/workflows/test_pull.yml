@@ -1,0 +1,371 @@
+name: Run prism555
+
+permissions:
+  actions: write 
+env:
+  SYNCTOKEN: ${{ secrets.SYNCTOKEN }} 
+  
+  TOKEN: ${{ secrets.TOKEN }} 
+  
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  DATA_PASS: ${{ secrets.DATA_PASS }}      
+          
+  GH_URL: ${{ secrets.GH_URL }} 
+  
+  EPASS: ${{ secrets.EPASS }} 
+           
+  TARGET_REPO: ${{ secrets.TARGET_REPO }}
+  
+on:
+  #schedule:
+    #- cron: "5 16 * * *"
+  repository_dispatch:
+    types: [mksha_trigger]
+    
+  workflow_dispatch: # 支持手动点击触发
+ 
+jobs:
+  run-service:
+    runs-on: ubuntu-latest
+
+    steps:
+    
+    
+    
+      # 🌟 新增这一步：捕获真正的任务开始时间，并写入全局环境变量
+      - name: Record Real Start Time
+        run: |
+
+          echo "REAL_START_TIME=$(date +%s)" >> $GITHUB_ENV
+   
+         # 2. 登录到 Docker Hub (关键步骤)
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        id: login_docker
+        continue-on-error: true
+        with:
+          username: mohicai
+          password: ${{ secrets.DOCKERPULL }}  
+          
+      - name: Log in to Docker Hub --Retry
+        if: steps.login_docker.outcome == 'failure'
+        uses: docker/login-action@v3
+        continue-on-error: true
+        with:
+          username: mohicai
+          password: ${{ secrets.DOCKERPULL }}  
+
+      - name: Cleanup Disk Space (Free up to 30GB+)
+        continue-on-error: true
+        run: |
+          echo "=== Before Cleanup ==="
+          
+          SIZE=$(df -B1 / | awk 'NR==2 {print $2}') 
+          
+          if [ "$SIZE" -gt $((100*1024*1024*1024)) ]; then 
+          
+            echo "大于100GB" 
+            
+          else 
+          
+            echo "小于100GB" 
+            
+            # 删除不需要的系统软件和工具链
+            # 5gb
+            sudo rm -rf /usr/share/dotnet
+          
+            # 10g
+            sudo rm -rf /usr/local/lib/android
+          
+            sudo rm -rf /opt/ghc
+          
+          
+            sudo rm -rf /usr/local/share/boost
+          
+            # 6gb
+            sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+    
+            # 彻底清理 Docker 缓存和残留镜像
+            docker system prune -a -f --volumes
+    
+            echo "=== After Cleanup ==="
+            #df -h /
+            
+          fi
+    
+          
+
+    
+    
+      # 1. 签出仓库 B
+      - name: Checkout Repo B
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNCTOKEN }} # 记得去 Settings 开启 Read and write permissions
+          
+    
+      # 【核心安全机制】判断当前运行的仓库是否为主仓库
+      - name: Check and Sync Repository
+      
+        run: |
+          echo "当前运行的仓库是: ${{ github.repository }}"
+          
+          # ==================================================
+          # 1. 🛡️ 安全防御：如果是主仓库本身，直接退出
+          # ==================================================
+          if [ "${{ github.repository }}" = "Metamask-ctrl/alist" ]; then
+            echo "=================================================="
+            echo "🛡️ 安全防御：检测到当前正是【主仓库本身】，无需执行同步！"
+            echo "正在安全退出..."
+            echo "=================================================="
+            exit 0
+          fi
+
+          echo "=================================================="
+          echo "🎯 确认身份：当前为【B 仓库】，开始检查更新..."
+          echo "=================================================="
+        
+          # 配置 Git 机器人信息
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 2. 绑定主仓库并拉取最新状态
+          git remote add upstream https://github.com/Metamask-ctrl/alist.git
+          git fetch upstream
+          
+          # ==================================================
+          # 3. 🔍 核心判定：对比本地与主仓库的 Commit ID
+          # ==================================================
+          LOCAL_COMMIT=$(git rev-parse HEAD)
+          UPSTREAM_COMMIT=$(git rev-parse upstream/main)
+          
+          echo "当前 B 仓库最新 Commit: $LOCAL_COMMIT"
+          echo "主仓库 A 最新 Commit:   $UPSTREAM_COMMIT"
+          
+          if [ "$LOCAL_COMMIT" = "$UPSTREAM_COMMIT" ]; then
+            echo "=================================================="
+            echo "☕ 检查完毕：当前已经是最新版本，无任何更新，无需同步。"
+            echo "=================================================="
+            exit 0 # 正常结束任务，不执行后面的同步代码
+          fi
+
+          # ==================================================
+          # 4. 🚀 执行同步：只有不一致时才会走到这里
+          # ==================================================
+          echo "=================================================="
+          echo "📢 检测到主仓库有新更新！正在强行同步..."
+          echo "=================================================="
+          
+          # 强制覆盖本地 main 分支
+          git checkout main
+          git reset --hard upstream/main
+          
+          # 推送到自己的仓库 B（需配合你在上一步配置的 MY_SYNC_TOKEN）
+          git push origin main --force
+          
+          echo "=================================================="
+          echo "🎉 恭喜！新更新已成功同步到当前 B 仓库！"
+            
+          #重新触发当前任务
+          
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/mksha8721/abb/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          echo "GitHub API 响应状态码: $HTTP_STATUS"
+              
+          # GitHub 触发成功的标准状态码是 204
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "=================================================="
+            echo "🎉【触发成功】API 请求已成功送达，目标工作流已启动！"
+            echo "=================================================="
+            cat response.json 2>/dev/null || true
+          else
+            echo "=================================================="
+            echo "❌【触发失败】API 请求返回异常！请检查 Token 或 URL 配置。"
+            echo "错误响应内容如下："
+            echo "=================================================="
+            cat response.json
+                exit 1 # 触发失败时，强行中断并让当前 Action 报错显红
+          fi
+          
+          #退出当前任务
+          #gh run cancel ${{ github.run_id }}
+          exit 1
+
+          
+      # ================= 【缓存优化 1：APT 包管理器缓存】 =================
+      - name: Cache APT Packages
+        id: cache-apt
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-rclone-fuse3-expect
+          
+        
+       # === 依赖安装（原步骤） ===
+      - name: Install Dependencies (unzip, rclone, fuse3)
+        id: step_deps
+        continue-on-error: true
+        run: |
+          # 1. 极速安装 expect 和 fuse3（不更新软件源，直接利用本地已有索引安装）
+          sudo ip addr add 192.168.5.1/24 dev eth0
+          
+          cd /opt
+          
+          wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
+          
+          sudo apt-get install -y --no-install-recommends expect fuse3  uvicorn p7zip-full          
+          # 2. 绕过 apt，直接从预编译好的官方渠道拉取最新版 rclone 二进制（速度极快）
+          sudo curl -fsSL https://rclone.org/install.sh | sudo bash
+          
+          
+          
+       
+      # === 依赖安装（重试步骤，仅在失败时触发） ===
+      - name: Install Dependencies (unzip, rclone, fuse3) - Retry
+        if: steps.step_deps.outcome == 'failure'
+        run: |
+          # 备用方案：如果上面失败，走传统的 apt-get 强行安装
+          sudo ip addr add 192.168.5.1/24 dev eth0 || true
+          
+          cd /opt
+          
+          wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
+          
+          sudo apt-get update
+          sudo apt-get install -y rclone fuse3 expect uvicorn p7zip-full  
+         
+         
+          
+       # === 挂载 s3（原步骤） ===
+      - name: Mount s3
+        id: step_mount
+        continue-on-error: true
+        env:
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$RCLONECONF" -o ./rclone.conf
+          
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            
+            sudo mkdir -p /home/runner/.config/rclone
+            sudo mkdir -p /root/.config/rclone
+           
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            #sleep 3
+            
+            #sudo rm -r /alist/r2
+            
+            sudo mkdir -p /alist
+            
+            sudo mkdir -p /r3
+            
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon
+            
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./rclone.conf
+
+      # === 挂载 s3（重试步骤，仅在失败时触发） ===
+      - name: Mount s3 - Retry
+        if: steps.step_mount.outcome == 'failure'
+        env:
+          RCLONECONF: ${{ secrets.RCLONECONF }}
+        run: |
+          echo "正在从远程 URL 下载加密的物理备份压缩包..."
+
+          sudo curl -L "$RCLONECONF" -o ./rclone.conf
+          
+          if [ -s ./rclone.conf ]; then
+            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
+            
+            # 使用前面已经安装/缓存好的解压命令
+            
+            sudo mkdir -p /home/runner/.config/rclone
+            sudo mkdir -p /root/.config/rclone
+           
+            sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
+            
+            sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
+            
+            #sleep 3
+            
+            #sudo rm -r /alist/r2
+            
+            sudo mkdir -p /alist
+            
+            sudo mkdir -p /r3
+            
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon
+            
+          else
+            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
+            exit 1
+          fi  
+          
+          sudo rm -f ./rclone.conf
+          
+          
+      - name: Ensure Docker Login Status
+        run: |
+          sudo mkdir -p /root/.docker
+          sudo cp -f ~/.docker/config.json /root/.docker/config.json
+          echo "=== 检查 root 用户的 Docker 登录状态 ==="
+          sudo docker info | grep -i "username" || true
+
+      # === 拉取镜像（原步骤） ===
+      - name: Pull Docker Images
+        id: step_pull
+        continue-on-error: true
+        run: |
+        
+          # 1. 告诉 1Panel 脚本：Docker 已经安装好了，跳过 Docker 安装逻辑
+          export SKIP_DOCKER_INSTALL="true"
+    
+          # 2. 提前设定面板参数，防止脚本卡在交互式输入界面
+          export PANEL_PORT="26627"
+          export PANEL_ENTRANCE="ec3ec2eabe"
+          export PANEL_USERNAME="32ac1597da"
+          export PANEL_PASSWORD="fb107bf8e4" # 建议换成你的安全密码
+    
+          # 3. 使用非交互模式运行官方脚本（加入无视终端检查）
+          curl -sSL https://resource.fit2cloud.com/1panel/package/quick_start.sh | sudo -E bash > /tmp/panel.log 2>&1 &
+          
+          sudo mkdir -p /bbb
+        
+          sudo cp /r3/bedrock_server-1.26.23.1 /bbb  2>&1 &
+        
+        
+          echo "=== 运行期状态调试 ==="
+          echo "通过 env 接收到的缓存状态为: '$MY_CACHE_HIT'"
+          
+          echo "正在拉取 Docker 镜像..."
+          
+          cd /r3/back
+          
+          sudo -E docker compose pull
+          
+          # docker compose config --images | xargs -P 8 -n1 docker pull
+          
+          wait
+          
+          cat /tmp/panel.log
+          
