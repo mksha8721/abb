@@ -5,13 +5,14 @@ permissions:
 env:
   SYNCTOKEN: ${{ secrets.SYNCTOKEN }} 
   
-  TOKEN: ${{ secrets.TOKEN }} 
+  # TOKEN: ${{ secrets.TOKEN }} 
   
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
   DATA_PASS: ${{ secrets.DATA_PASS }}      
           
-  GH_URL: ${{ secrets.GH_URL }} 
+  # GH_URL: ${{ secrets.GH_URL }} 
+  URL: ${{ secrets.URL }}
   
   EPASS: ${{ secrets.EPASS }} 
            
@@ -42,13 +43,37 @@ jobs:
 
           echo "REAL_START_TIME=$(date +%s)" >> $GITHUB_ENV
    
+   
+      - name: Fetch KV values
+        run: |
+          fetch() {
+            key=$1
+            var=$2
+            value=$(curl -s "$URL/$key")
+            echo "$var=$value" >> env.tmp
+          }
+
+          fetch coolab TOKEN &
+          # fetch DATA_PASS DATA_PASS &
+          fetch coolab6_gh_url GH_URL &
+          # fetch epass EPASS &
+          # fetch CF_TUNNEL_TOKEN CF_TUNNEL_TOKEN &
+          # fetch TAIL TAIL &
+          # fetch RCLONECONF RCLONECONF &
+          fetch DOCKERUSER DOCKERUSER &
+          # fetch DOCKERPASS DOCKERPASS &
+
+          wait
+
+          cat env.tmp >> $GITHUB_EN
+   
          # 2. 登录到 Docker Hub (关键步骤)
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         id: login_docker
         continue-on-error: true
         with:
-          username: mohicai
+          username: $DOCKERUSER
           password: ${{ secrets.DOCKERPULL }}  
           
       - name: Log in to Docker Hub --Retry
@@ -56,7 +81,7 @@ jobs:
         uses: docker/login-action@v3
         continue-on-error: true
         with:
-          username: mohicai
+          username: $DOCKERUSER
           password: ${{ secrets.DOCKERPULL }}  
 
       - name: Cleanup Disk Space (Free up to 30GB+)
