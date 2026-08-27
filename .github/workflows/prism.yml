@@ -65,7 +65,7 @@ jobs:
 
           wait
 
-          cat env.tmp >> $GITHUB_EN
+          cat env.tmp >> $GITHUB_ENV
    
          # 2. 登录到 Docker Hub (关键步骤)
       - name: Log in to Docker Hub
