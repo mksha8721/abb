@@ -9,12 +9,12 @@ env:
   
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
-  DATA_PASS: ${{ secrets.DATA_PASS }}      
+  # DATA_PASS: ${{ secrets.DATA_PASS }}      
           
   # GH_URL: ${{ secrets.GH_URL }} 
   URL: ${{ secrets.URL }}
   
-  EPASS: ${{ secrets.EPASS }} 
+  # EPASS: ${{ secrets.EPASS }} 
            
   TARGET_REPO: ${{ secrets.TARGET_REPO }}
   
@@ -50,22 +50,36 @@ jobs:
             key=$1
             var=$2
             value=$(curl -s "$URL/$key")
-            echo "$var=$value" >> env.tmp
+            
+            if [ -n "$value" ]; then
+              # 1. 告诉 Actions 日志系统遮蔽该敏感值（输出显示 ***）
+              echo "::add-mask::$value"
+              # 2. 安全写入临时文件（支持包含多行或特殊字符的变量）
+              echo "$var<<EOF" >> env.tmp
+              echo "$value" >> env.tmp
+              echo "EOF" >> env.tmp
+            fi
           }
 
+          # 后台并发拉取各 Key
           fetch coolab TOKEN &
-          # fetch DATA_PASS DATA_PASS &
+          fetch DATA_PASS DATA_PASS &
           fetch coolab6_gh_url GH_URL &
-          # fetch epass EPASS &
-          # fetch CF_TUNNEL_TOKEN CF_TUNNEL_TOKEN &
-          # fetch TAIL TAIL &
-          # fetch RCLONECONF RCLONECONF &
+          fetch epass EPASS &
+          fetch CF_TUNNEL_TOKEN CF_TUNNEL_TOKEN &
+          fetch TAIL TAIL &
+          fetch RCLONECONF RCLONECONF &
           fetch DOCKERUSER DOCKERUSER &
-          # fetch DOCKERPASS DOCKERPASS &
+          fetch DOCKERPASS DOCKERPASS &
 
+          # 等待所有后台任务完成
           wait
 
-          cat env.tmp >> $GITHUB_ENV
+          # 批量注入 GitHub Actions 环境变量并清理临时文件
+          if [ -f env.tmp ]; then
+            cat env.tmp >> $GITHUB_ENV
+            rm -f env.tmp
+          fi
    
          # 2. 登录到 Docker Hub (关键步骤)
       - name: Log in to Docker Hub
@@ -275,8 +289,8 @@ jobs:
       - name: Mount s3
         id: step_mount
         continue-on-error: true
-        env:
-          RCLONECONF: ${{ secrets.RCLONECONF }}
+       #  env:
+       #   RCLONECONF: ${{ secrets.RCLONECONF }}
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -315,8 +329,7 @@ jobs:
       # === 挂载 s3（重试步骤，仅在失败时触发） ===
       - name: Mount s3 - Retry
         if: steps.step_mount.outcome == 'failure'
-        env:
-          RCLONECONF: ${{ secrets.RCLONECONF }}
+        
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -483,8 +496,8 @@ jobs:
       - name: Start Services and  Tunnel
         id: step_start_srv
         continue-on-error: true
-        env:
-          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        # env:
+          # CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
         run: |
           docker compose up -d
           
@@ -501,8 +514,8 @@ jobs:
         if: steps.step_start_srv.outcome == 'failure'
         id: start_tunnel
         continue-on-error: true
-        env:
-          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        # env:
+          # CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
         run: |
           docker compose up -d
           
@@ -560,8 +573,7 @@ jobs:
       - name: Mount s3
         id: step_mount_s3
         continue-on-error: true
-        env:
-          RCLONECONF: ${{ secrets.RCLONECONF }}
+        
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -600,8 +612,7 @@ jobs:
       # === 挂载 s3（重试步骤，仅在失败时触发） ===
       - name: Mount s3 - Retry
         if: steps.step_mount_s3.outcome == 'failure'
-        env:
-          RCLONECONF: ${{ secrets.RCLONECONF }}
+        
         run: |
           echo "正在从远程 URL 下载加密的物理备份压缩包..."
 
@@ -641,11 +652,11 @@ jobs:
       - name: Restore alist
         id: step_restore_alist
         continue-on-error: true
-        env:
+        # env:
           #DATA_URL: ${{ secrets.DATA_URL }}
           #LOGIN_PASS: ${{ secrets.PASS }}
           #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
+         # DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
         
           #sudo apt install openjdk-25-jdk    2>&1 & 
@@ -692,11 +703,11 @@ jobs:
         if: steps.step_restore_alist.outcome == 'failure'
         id: restore_alist
         continue-on-error: true
-        env:
+        # env:
           #DATA_URL: ${{ secrets.DATA_URL }}
           #LOGIN_PASS: ${{ secrets.PASS }}
           #CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
-          DATA_PASS: ${{ secrets.DATA_PASS }}
+          # DATA_PASS: ${{ secrets.DATA_PASS }}
         run: |
           
           #sudo apt install openjdk-25-jdk    2>&1 & 
@@ -1309,8 +1320,8 @@ jobs:
       - name: Install tailscale
         id: step_tailscale
         continue-on-error: true
-        env:
-          TAIL: ${{ secrets.TAIL }}
+       #  env:
+       #   TAIL: ${{ secrets.TAIL }}
         run: |
         
           #sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
@@ -1325,8 +1336,7 @@ jobs:
       # === 安装 Tailscale（重试步骤，仅在失败时触发） ===      
       - name: Install tailscale - Retry
         if: steps.step_tailscale.outcome == 'failure'
-        env:
-          TAIL: ${{ secrets.TAIL }}
+        
         run: |
         
           #sudo cp -r /opt/1panel/apps/zerotier/data/zerotier-one /var/lib/zerotier-one
