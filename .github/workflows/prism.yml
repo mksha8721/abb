@@ -18,6 +18,9 @@ env:
   TARGET_REPO: ${{ secrets.TARGET_REPO }}
   
 on:
+  push:
+    paths:
+      - 'aaa.txt'
   #schedule:
     #- cron: "5 16 * * *"
   repository_dispatch:
@@ -108,7 +111,7 @@ jobs:
     
       # 【核心安全机制】判断当前运行的仓库是否为主仓库
       - name: Check and Sync Repository
-      
+        continue-on-error: true    
         run: |
           echo "当前运行的仓库是: ${{ github.repository }}"
           
