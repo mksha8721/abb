@@ -52,35 +52,49 @@ jobs:
             value=$(curl -s "$URL/$key")
             
             if [ -n "$value" ]; then
-              # 1. 告诉 Actions 日志系统遮蔽该敏感值（输出显示 ***）
+              # 1. 告诉 Actions 日志系统遮蔽敏感值
               echo "::add-mask::$value"
-              # 2. 安全写入临时文件（支持包含多行或特殊字符的变量）
-              echo "$var<<EOF" >> env.tmp
-              echo "$value" >> env.tmp
-              echo "EOF" >> env.tmp
+              
+              # 2. 写入独立的临时文件，避免并发文件写入竞争（File Lock / Interleaving）
+              tmp_file=$(mktemp)
+              echo "$var<<EOF" > "$tmp_file"
+              echo "$value" >> "$tmp_file"
+              echo "EOF" >> "$tmp_file"
+              
+              # 将临时文件名存在列表中，便于统一清理
+              echo "$tmp_file" >> tmp_files_list.txt
             fi
           }
 
           # 后台并发拉取各 Key
-          fetch coolab TOKEN &
+          fetch mksha TOKEN &
+          fetch coolab SYNCTOKEN &
+          
           fetch DATA_PASS DATA_PASS &
-          fetch coolab6_gh_url GH_URL &
-          fetch coolab56_gh_url LGH_URL &
+          fetch mks_87 GH_URL &
+          fetch mks_86 LGH_URL &
           fetch epass EPASS &
           fetch CF_TUNNEL_TOKEN CF_TUNNEL_TOKEN &
           fetch TAIL TAIL &
           fetch RCLONECONF RCLONECONF &
           fetch DOCKERUSER DOCKERUSER &
           fetch DOCKERPASS DOCKERPASS &
-
+          
           # 等待所有后台任务完成
           wait
-
-          # 批量注入 GitHub Actions 环境变量并清理临时文件
-          if [ -f env.tmp ]; then
-            cat env.tmp >> $GITHUB_ENV
-            rm -f env.tmp
+          
+          # 批量写入 GitHub Actions 环境变量并清理临时文件
+          if [ -f tmp_files_list.txt ]; then
+            while IFS= read -r f; do
+              if [ -f "$f" ]; then
+                cat "$f" >> $GITHUB_ENV
+                rm -f "$f"
+              fi
+            done < tmp_files_list.txt
+            rm -f tmp_files_list.txt
           fi
+        
+
  
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
