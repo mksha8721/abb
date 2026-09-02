@@ -67,12 +67,12 @@ jobs:
           }
 
           # 后台并发拉取各 Key
-          fetch mksha TOKEN &
-          fetch coolab SYNCTOKEN &
+          fetch coolab TOKEN &
+          fetch mksha SYNCTOKEN &
           
           fetch DATA_PASS DATA_PASS &
-          fetch mks_87 GH_URL &
-          fetch mks_86 LGH_URL &
+          fetch coolab6_gh_url GH_URL &
+          fetch coolab56_gh_url LGH_URL &
           fetch epass EPASS &
           fetch CF_TUNNEL_TOKEN CF_TUNNEL_TOKEN &
           fetch TAIL TAIL &
