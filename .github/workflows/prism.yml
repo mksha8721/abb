@@ -31,7 +31,7 @@ on:
  
 jobs:
   run-service:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     
@@ -312,7 +312,7 @@ jobs:
             sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
             # sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon -vv
             sudo mv /usr/local/bin/fusermount3 /usr/local/bin/fusermount3.bak 2>/dev/null || true
-            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other  -vv
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other --daemon -vv
             # sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other -vv
           else
             exit 1
