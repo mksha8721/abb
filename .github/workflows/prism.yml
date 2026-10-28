@@ -301,7 +301,7 @@ jobs:
          
           
        # === 挂载 s3（原步骤） ===
-  - name: Mount s3
+      - name: Mount s3
         id: step_mount
         continue-on-error: true
         run: |
