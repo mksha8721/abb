@@ -304,21 +304,10 @@ jobs:
       - name: Mount s3
         id: step_mount
         continue-on-error: true
-       #  env:
-       #   RCLONECONF: ${{ secrets.RCLONECONF }}
         run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo curl -L "$RCLONECONF" -o ./rclone.conf
-          
+          sudo curl -L -A "$CURL_UA" "$RCLONECONF" -o ./rclone.conf
           if [ -s ./rclone.conf ]; then
-            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            
-            sudo mkdir -p /home/runner/.config/rclone
-            sudo mkdir -p /root/.config/rclone
-           
+            sudo mkdir -p /home/runner/.config/rclone /root/.config/rclone /alist /r3
             sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
             sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
             # sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon -vv
@@ -326,10 +315,8 @@ jobs:
             sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other --daemon -vv
             # sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other -vv
           else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
           fi  
-          
           sudo rm -f ./rclone.conf
 
       # === 挂载 s3（重试步骤，仅在失败时触发） ===
