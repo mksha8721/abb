@@ -320,20 +320,11 @@ jobs:
             sudo mkdir -p /root/.config/rclone
            
             sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
-            
             sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
-            
-            #sleep 3
-            
-            #sudo rm -r /alist/r2
-            
-            sudo mkdir -p /alist
-            
-            sudo mkdir -p /r3
-            
-            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon
-            
-            
+            # sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon -vv
+            sudo mv /usr/local/bin/fusermount3 /usr/local/bin/fusermount3.bak 2>/dev/null || true
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other --daemon -vv
+            # sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --allow-other -vv
           else
             echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
@@ -343,42 +334,41 @@ jobs:
 
       # === 挂载 s3（重试步骤，仅在失败时触发） ===
       - name: Mount s3 - Retry
+        id: step_mount_retry
         if: steps.step_mount.outcome == 'failure'
-        
+        continue-on-error: true
         run: |
-          echo "正在从远程 URL 下载加密的物理备份压缩包..."
-
-          sudo curl -L "$RCLONECONF" -o ./rclone.conf
-          
+          sudo curl -L -A "$CURL_UA" "$RCLONECONF" -o ./rclone.conf
           if [ -s ./rclone.conf ]; then
-            echo "rclone.conf文件下载成功，正在执行覆盖解压..."
-            
-            # 使用前面已经安装/缓存好的解压命令
-            
-            sudo mkdir -p /home/runner/.config/rclone
-            sudo mkdir -p /root/.config/rclone
-           
+            sudo mkdir -p /home/runner/.config/rclone /root/.config/rclone /alist /r3
             sudo cp ./rclone.conf /home/runner/.config/rclone/rclone.conf
-            
             sudo cp ./rclone.conf /root/.config/rclone/rclone.conf
-            
-            #sleep 3
-            
-            #sudo rm -r /alist/r2
-            
-            sudo mkdir -p /alist
-            
-            sudo mkdir -p /r3
-            
-            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full  --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon
-            
+            sudo rclone mount r2:action /r3 --cache-dir /tmp --vfs-cache-mode full --vfs-write-back 10s --vfs-cache-max-size 8G --dir-cache-time 10s --allow-other --daemon
           else
-            echo "错误：加密备份文件下载失败或为空，无法执行恢复！"
             exit 1
           fi  
-          
           sudo rm -f ./rclone.conf
-          
+
+      - name: Retart All Job
+        if: steps.step_mount_retry.outcome == 'failure'
+        run: |
+          sudo cp /r3/back/a.sh /opt || true
+          HTTP_STATUS=$(curl -s -A "$CURL_UA" -o response.json -w "%{http_code}" -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SYNCTOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+              -d '{"event_type": "mksha_trigger"}')
+
+          if [ "$HTTP_STATUS" -eq 204 ]; then
+            cat response.json 2>/dev/null || true
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "​✅【触发成功】Pull失败，API 请求已成功送达，工作流已重启！${{ github.repository }}")"
+          else
+            cat response.json
+            sudo bash /opt/a.sh $(cat /r3/back/ul.txt) $EPASS $(cat /r3/back/to.txt) "$(echo "❌【触发成功】Pull失败，API 请求送达失败，工作流未重启！${{ github.repository }}")"
+            exit 1
+          fi
+          exit 1
           
       - name: Ensure Docker Login Status
         run: |
