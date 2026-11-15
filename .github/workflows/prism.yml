@@ -1395,7 +1395,7 @@ jobs:
           
           docker start cloudflared-tunnel
           
-          sudo tailscale up \
+          # sudo tailscale up \
             --authkey=${{ secrets.TAIL }} \
             --hostname=github-actions-runner \
             --accept-routes \
