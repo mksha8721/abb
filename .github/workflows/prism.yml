@@ -1077,7 +1077,7 @@ jobs:
             
             if [ -f "$app_dir/docker-compose.yml" ]; then
               echo "🚀 [启动中] $app_name ..."
-              timeout 120s bash -c "cd '$app_dir' && sudo docker compose up -d > log.txt 2>&1"
+              timeout 16s bash -c "cd '$app_dir' && sudo docker compose up -d > log.txt 2>&1"
               
               if [ $? -eq 0 ]; then
                 echo "✅ [完成] $app_name"
@@ -1108,7 +1108,7 @@ jobs:
                 echo "🔄 [重试] $app_name ..."
                 
                 # 重试拉起
-                timeout 180s bash -c "cd '$app_dir' && sudo docker compose up -d >> log.txt 2>&1" || true
+                timeout 15s bash -c "cd '$app_dir' && sudo docker compose up -d >> log.txt 2>&1" || true
                 
                 # 再次检查状态
                 retry_check=$(cd "$app_dir" && sudo docker compose ps -q --filter "status=running" 2>/dev/null || true)
