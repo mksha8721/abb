@@ -1063,15 +1063,15 @@ jobs:
         run: |
           set -e
 
-
           # 设置 root 密码
           printf 'root:%s\n' "$PASS" | sudo chpasswd
 
           # 清理密码变量
           unset PASS
 
-          # 确保 SSH 配置目录存在
-          sudo mkdir -p /etc/ssh/sshd_config.d
+          # 创建 SSHD 运行目录
+          sudo mkdir -p /run/sshd
+          sudo chmod 755 /run/sshd
 
           # 设置 root 允许登录
           sudo sed -i \
@@ -1086,7 +1086,7 @@ jobs:
           # 验证 SSH 配置
           sudo sshd -t
 
-          # 重启 SSH 服务，兼容不同系统
+          # 重启 SSH 服务
           if sudo systemctl restart ssh 2>/dev/null; then
             echo "✅ SSH 服务已重启"
           else
