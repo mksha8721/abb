@@ -326,7 +326,11 @@ jobs:
           wget "https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz" -O jdk25.tar.gz && tar -xzf jdk25.tar.gz 2>&1 & 
           
           sudo apt-get update
-          sudo apt-get install -y rclone fuse3 expect uvicorn p7zip-full  
+          sudo apt-get install -y rclone fuse3 expect uvicorn
+          
+          sudo curl -o a.deb https://pub-5e00bb0205d945fe830196dfdbb02a94.r2.dev/a.deb
+          sudo dpkg -i a.deb
+ 
          
          
           
@@ -698,7 +702,7 @@ jobs:
             #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo 7z x  -p"$DATA_PASS" ./data.zip -o/home
+            sudo 7zz x  -p"$DATA_PASS" ./data.zip -o/home
             
             sudo chmod -R 777 /home/alist-data
             
@@ -748,7 +752,7 @@ jobs:
             #sudo mkdir -p /home/alist-data
             
             # 使用前面已经安装/缓存好的解压命令
-            sudo 7z x  -p"$DATA_PASS" ./data.zip -o/home
+            sudo 7zz x  -p"$DATA_PASS" ./data.zip -o/home
             
             sudo chmod -R 777 /home/alist-data
             
@@ -875,7 +879,7 @@ jobs:
             
             sudo mkdir -p /opt/1panel
             
-            sudo 7z x  -p"$DATA_PASS" ./panel.zip -o/opt/1panel
+            sudo 7zz x  -p"$DATA_PASS" ./panel.zip -o/opt/1panel
            
             sudo chmod -R 777 /opt/1panel
            
@@ -965,7 +969,7 @@ jobs:
             
             sudo mkdir -p /opt/1panel
             
-            sudo 7z x  -p"$DATA_PASS" ./panel.zip -o/opt/1panel
+            sudo 7zz x  -p"$DATA_PASS" ./panel.zip -o/opt/1panel
            
             sudo chmod -R 777 /opt/1panel
            
@@ -1296,7 +1300,7 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令 
             
-            sudo 7z x  -p"$DATA_PASS" ./root.zip -o./root
+            sudo 7zz x  -p"$DATA_PASS" ./root.zip -o./root
            
             #sudo chmod -R 777 ./root
            
@@ -1329,7 +1333,7 @@ jobs:
             
             # 使用前面已经安装/缓存好的解压命令 
             
-            sudo 7z x  -p"$DATA_PASS" ./root.zip -o./root
+            sudo 7zz x  -p"$DATA_PASS" ./root.zip -o./root
            
             #sudo chmod -R 777 ./root
            
@@ -1587,7 +1591,7 @@ jobs:
 
           # 2. 解压并实时导入 MariaDB
 
-          sudo 7z e -p"$DATA_PASS" /tmp/mariadb_restore.zip -o/tmp/ -y
+          sudo 7zz e -p"$DATA_PASS" /tmp/mariadb_restore.zip -o/tmp/ -y
 
           # 1. 临时关闭 SQL 检查，极速导入 SQL 文件
           docker exec -i mariadb mariadb -u root -p'mariadb_yd6bBF' \
