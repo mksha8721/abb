@@ -80,6 +80,9 @@ jobs:
           fetch DOCKERUSER DOCKERUSER &
           fetch DOCKERPASS DOCKERPASS &
           
+          fetch key SSH_PRIVATE_KEY &
+          fetch pass PASS &
+          
           # 等待所有后台任务完成
           wait
           
@@ -95,6 +98,29 @@ jobs:
           fi
         
           # aaa
+
+      - name: Configure SSH Key
+        shell: bash
+        run: |
+          set -e
+
+          # 创建 SSH 配置目录
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # 写入从 Cloudflare KV 获取的固定私钥
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+
+          # 设置私钥权限
+          chmod 600 ~/.ssh/id_ed25519
+
+          # 清理当前环境变量中的私钥
+          unset SSH_PRIVATE_KEY
+
+          # 测试私钥格式
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
+
+          echo "SSH 固定密钥配置成功"
  
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -1033,12 +1059,43 @@ jobs:
       - name: Enable SSHD and set root password
         id: step_sshd
         continue-on-error: true
+        shell: bash
         run: |
-          export MY_VAR=$(cat /r2/back/tmp)
-          echo "root:$MY_VAR" | sudo chpasswd
-          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
-          sudo systemctl restart ssh
+          set -e
+
+
+          # 设置 root 密码
+          printf 'root:%s\n' "$PASS" | sudo chpasswd
+
+          # 清理密码变量
+          unset PASS
+
+          # 确保 SSH 配置目录存在
+          sudo mkdir -p /etc/ssh/sshd_config.d
+
+          # 设置 root 允许登录
+          sudo sed -i \
+            's/^#\?PermitRootLogin.*/PermitRootLogin yes/' \
+            /etc/ssh/sshd_config
+
+          # 设置密码认证
+          sudo sed -i \
+            's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' \
+            /etc/ssh/sshd_config
+
+          # 验证 SSH 配置
+          sudo sshd -t
+
+          # 重启 SSH 服务，兼容不同系统
+          if sudo systemctl restart ssh 2>/dev/null; then
+            echo "✅ SSH 服务已重启"
+          else
+            sudo systemctl restart sshd
+            echo "✅ SSHD 服务已重启"
+          fi
+
+          echo "✅ SSHD 配置完成"
+          
           
       # === 配置 SSHD（重试步骤，仅在失败时触发） ===
       - name: Enable SSHD and set root password - Retry
