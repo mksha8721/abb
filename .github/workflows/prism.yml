@@ -1696,10 +1696,11 @@ jobs:
           
           docker stop siyuan
           docker stop code-server
+          docker stop baidu
           
-          sleep 60
+          sleep 20
                     
-          sudo bash /opt/1panel/task/all.sh > /tmp/back_log.txt 2>&1 &
+          sudo bash /opt/1panel/task/all.sh
           
         
           # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
