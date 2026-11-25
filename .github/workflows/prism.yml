@@ -1696,12 +1696,12 @@ jobs:
           
           docker stop siyuan
           docker stop code-server
-          docker stop baidu
           
-          sleep 20
+          sleep 60
                     
-          sudo bash /opt/1panel/task/all.sh
+          # sudo bash /opt/1panel/task/all.sh
           
+          sudo bash /opt/1panel/task/all.sh > /tmp/back_log.txt 2>&1 &
         
           # 通过 -w 获取 HTTP 状态码，并用 -s 隐藏进度条
           HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
@@ -1773,12 +1773,12 @@ jobs:
         
           sudo python3 /opt/1panel/task/stop.py
           
-          sudo systemctl stop tailscaled
+          # sudo systemctl stop tailscaled
           
           
-          docker restart easynvr-app-1
+          # docker restart easynvr-app-1
           
-          docker restart AgentDVR
+          # docker restart AgentDVR
     
           docker stop cloudflared-tunnel
 
